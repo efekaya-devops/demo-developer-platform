@@ -7,7 +7,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/GITHUB_ORG/idp-gitops
+    repoURL: https://github.com/efekaya-devops/idp-gitops
     targetRevision: main
     path: apps
   destination:

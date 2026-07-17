@@ -9,7 +9,7 @@ spec:
   generators:
     - scmProvider:
         github:
-          organization: GITHUB_ORG
+          organization: efekaya-devops
           # tokenRef optional for public repos; set for private orgs:
           # tokenRef: { secretName: github-token, key: token }
         filters:

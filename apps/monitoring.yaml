@@ -12,7 +12,7 @@ spec:
       helm:
         valueFiles:
           - $values/monitoring/values.yaml
-    - repoURL: https://github.com/GITHUB_ORG/idp-gitops
+    - repoURL: https://github.com/efekaya-devops/idp-gitops
       targetRevision: main
       ref: values
   destination:
