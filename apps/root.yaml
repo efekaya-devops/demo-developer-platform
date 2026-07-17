@@ -1,4 +1,4 @@
-# App-of-apps: ArgoCD manages everything under apps/ — including itself.
+# app-of-apps, argocd manages everything in apps/ including this file
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

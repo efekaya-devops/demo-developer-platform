@@ -1,4 +1,4 @@
-# kube-prometheus-stack tuned for the local demo cluster.
+# values for the local demo, don't copy these as-is for anything real
 grafana:
   service:
     type: NodePort

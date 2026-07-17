@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# One command to a running platform: kind cluster + ArgoCD + the app-of-apps.
-# From there ArgoCD pulls everything else (monitoring, service discovery).
+# spins up the cluster + argocd + the app-of-apps. argocd takes it from
+# there and pulls in the rest (monitoring, service discovery) on its own
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -21,4 +21,4 @@ kubectl apply -f apps/root.yaml
 
 echo "=== 4/4 done ==="
 echo "ArgoCD  http://localhost:8081  (admin / \$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d))"
-echo "Grafana http://localhost:3001  (admin / demo) — after the monitoring app syncs"
+echo "Grafana http://localhost:3001  (admin / demo) - once the monitoring app finishes syncing"

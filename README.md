@@ -1,39 +1,37 @@
 # idp-gitops
 
-The runtime half of the IDP demo: a **local kind cluster**, **ArgoCD**
-(app-of-apps, self-managed), the **monitoring stack** (kube-prometheus-stack:
-Prometheus + Grafana), and **automatic service discovery** — every repo the
-portal scaffolds is deployed and dashboarded without a single manual step here.
+The runtime side of the demo - local kind cluster, argocd, monitoring
+(prometheus + grafana), and service discovery so new repos get deployed
+without touching this repo by hand.
 
 Companion repos: [backstage-idp](../backstage-idp) (the portal),
 [terraform-modules](../terraform-modules) (infra modules),
-[platform-docs](../platform-docs) (architecture & journey).
+[platform-docs](../platform-docs) (docs).
 
-## One command
+## setup
 
 ```bash
 scripts/bootstrap.sh
 ```
 
-Creates the 3-node kind cluster, installs ArgoCD, applies the app-of-apps.
-ArgoCD then pulls in everything under `apps/`:
+makes the kind cluster, installs argocd, applies the app-of-apps. from there
+argocd pulls in everything under `apps/` on its own:
 
-| App | What it does |
+| app | does what |
 |---|---|
-| `root` | app-of-apps — ArgoCD manages its own config from this repo |
-| `monitoring` | kube-prometheus-stack; Grafana sidecar hot-loads any ConfigMap labeled `grafana_dashboard=1` |
-| `services` (ApplicationSet) | SCM-provider generator: every org repo with topic **`idp-service`** gets an Application syncing its `k8s/` dir |
+| `root` | app-of-apps, argocd manages its own config from this repo |
+| `monitoring` | prometheus + grafana, grafana's sidecar auto-loads dashboard configmaps |
+| `services` (ApplicationSet) | deploys any org repo tagged `idp-service` |
 
-- ArgoCD UI → http://localhost:8081
-- Grafana → http://localhost:3001 (admin / demo)
+- argocd: http://localhost:8081
+- grafana: http://localhost:3001 (admin / demo)
 
-## Why the discovery model matters
+## why the tag-based discovery thing
 
-The golden path tags each scaffolded repo `idp-service`. The ApplicationSet
-turns that tag into a deployment; the dashboard ConfigMap in the service's own
-repo turns it into observability. **The platform scales by convention, not by
-tickets** — nobody edits this repo when a team ships a new service, and
-removing the tag (or the repo) un-deploys it just as declaratively.
+the golden path template tags every repo it creates with `idp-service`. the
+ApplicationSet in `apps/services.yaml` watches for that tag and deploys
+whatever it finds. so a new service goes live without anyone editing this
+repo - remove the tag (or delete the repo) and it un-deploys the same way.
 
-Before first use, replace `GITHUB_ORG` in `apps/*.yaml` with your GitHub
-org/username (`grep -rl GITHUB_ORG apps/`).
+before using this for real: replace `GITHUB_ORG` in `apps/*.yaml` with your
+own github username/org (`grep -rl GITHUB_ORG apps/` to find them all).

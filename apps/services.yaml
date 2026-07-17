@@ -1,6 +1,5 @@
-# Service discovery: every repo in the org tagged `idp-service` (the golden
-# path sets the topic at creation) gets an ArgoCD Application syncing its k8s/
-# directory. Creating a service via the portal requires ZERO changes here.
+# any repo tagged idp-service gets picked up and synced automatically,
+# don't need to touch this file when a new service shows up
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
