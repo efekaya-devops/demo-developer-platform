@@ -9,9 +9,8 @@ spec:
   generators:
     - scmProvider:
         github:
-          organization: efekaya-devops
-          # tokenRef optional for public repos; set for private orgs:
-          # tokenRef: { secretName: github-token, key: token }
+          organization: efekaya-devex-platform
+          tokenRef: { secretName: github-token, key: token }
         filters:
           - topic: idp-service
   template:
