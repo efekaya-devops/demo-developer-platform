@@ -1,0 +1,17 @@
+# kube-prometheus-stack tuned for the local demo cluster.
+grafana:
+  service:
+    type: NodePort
+    nodePort: 30030
+  adminPassword: demo   # demo cluster only — never do this outside a laptop
+  sidecar:
+    dashboards:
+      enabled: true          # hot-loads any ConfigMap labeled grafana_dashboard=1
+      searchNamespace: ALL   # service dashboards live next to the services
+prometheus:
+  prometheusSpec:
+    # Pick up every ServiceMonitor, not only the chart's own.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    retention: 24h
+alertmanager:
+  enabled: false   # out of scope for the demo

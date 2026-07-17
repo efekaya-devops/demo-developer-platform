@@ -1,0 +1,33 @@
+# Service discovery: every repo in the org tagged `idp-service` (the golden
+# path sets the topic at creation) gets an ArgoCD Application syncing its k8s/
+# directory. Creating a service via the portal requires ZERO changes here.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services
+  namespace: argocd
+spec:
+  generators:
+    - scmProvider:
+        github:
+          organization: GITHUB_ORG
+          # tokenRef optional for public repos; set for private orgs:
+          # tokenRef: { secretName: github-token, key: token }
+        filters:
+          - topic: idp-service
+  template:
+    metadata:
+      name: '{{ repository }}'
+    spec:
+      project: default
+      source:
+        repoURL: '{{ url }}'
+        targetRevision: '{{ branch }}'
+        path: k8s
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
