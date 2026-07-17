@@ -1,34 +1,36 @@
 # terraform-modules
 
-Reusable infrastructure modules for the Internal Developer Platform demo.
-Same interface, two targets — the demo runs free on a laptop, and the cloud
-path is a `source =` swap away:
+Infra modules for the IDP demo. Local (free) and cloud versions of the same
+thing, so swapping `source =` is basically the whole migration.
 
-| Module | Target | Use |
+| Module | Target | Notes |
 |---|---|---|
-| `modules/kind-local` | kind (local Docker) | The demo cluster — zero cloud cost |
-| `modules/aks-cluster` | Azure AKS | The like-for-like production path (OIDC issuer + workload identity enabled) |
+| `modules/kind-local` | kind | the demo cluster, no cloud account needed |
+| `modules/aks-cluster` | Azure AKS | oidc + workload identity on |
+| `modules/aws-eks` | AWS EKS | uses the default vpc, keep it that way for demos |
+| `modules/aws-s3` | AWS S3 | bucket w/ versioning + encryption on by default |
+| `modules/gcp-gke` | GCP GKE | zonal, not regional - cheaper |
+| `modules/gcp-gcs` | GCP GCS | same idea as the s3 one |
 
-## Quick start (local)
+## quick start (local)
 
 ```bash
 cd examples/local
 terraform init && terraform apply
 ```
 
-You get the same 3-node cluster `idp-gitops/scripts/bootstrap.sh` creates —
-use whichever entrypoint fits the audience; both feed the same GitOps
-bootstrap.
+Same cluster `idp-gitops/scripts/bootstrap.sh` gives you, just via terraform
+instead of the script. Pick whichever.
 
-## Design notes
+`examples/aws` and `examples/gcp` show how the cloud modules wire together -
+not meant to be applied blind, put in your own bucket name / project id first.
 
-- **Modules own the "what", environments own the "how big".** Sizing (node
-  count, VM size, SKU tier) is variables with safe defaults, so a demo
-  environment and a production environment differ in a `.tfvars` file, not in
-  forked code.
-- **No state or credentials in this repo.** Backends are configured by the
-  consuming environment; CI only ever runs `fmt`/`validate` (see
-  `.github/workflows/validate.yaml`).
+## notes to self
 
-Companion repos: [backstage-idp](../backstage-idp) ·
+- sizing (node count, instance type, sku) is all variables w/ defaults, so
+  demo vs "real" env is a tfvars difference, not a forked module
+- no backend/state config in here on purpose, that's the consuming env's job
+- CI just runs fmt + validate, nothing fancy
+
+other repos: [backstage-idp](../backstage-idp) ·
 [idp-gitops](../idp-gitops) · [platform-docs](../platform-docs)
