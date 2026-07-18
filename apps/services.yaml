@@ -1,5 +1,7 @@
-# any repo tagged idp-service gets picked up and synced automatically,
-# don't need to touch this file when a new service shows up
+# any repo in the org with a k8s/ folder gets picked up and synced
+# automatically - that folder is what the golden path scaffolds, so in
+# practice it means "repos made by the portal". don't need to touch this
+# file when a new service shows up
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -8,13 +10,13 @@ metadata:
 spec:
   generators:
     - scmProvider:
+        # https so argocd uses the token secret, not ssh keys
+        cloneProtocol: https
         github:
           organization: efekaya-devex-platform
           tokenRef: { secretName: github-token, key: token }
-          # https so argocd uses the token secret, not ssh keys
-          cloneProtocol: https
         filters:
-          - topic: idp-service
+          - pathsExist: [k8s]
   template:
     metadata:
       name: '{{ repository }}'

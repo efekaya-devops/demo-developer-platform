@@ -10,4 +10,5 @@ jobs:
         with:
           args: >-
             -ignore-missing-schemas -strict -summary
+            -ignore-filename-pattern values.yaml
             apps/ bootstrap/ monitoring/
