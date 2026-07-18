@@ -16,8 +16,10 @@ spec:
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
 metadata:
-  name: provider-azure-azure
+  name: provider-family-azure
 spec:
-  # the "azure" family member - just the core resources (incl. ResourceGroup),
-  # not the whole azure surface. keeps the CRD count sane on a laptop
-  package: xpkg.upbound.io/upbound/provider-azure-azure:v1.11.2
+  # the family base provider - small, and it already ships the CRDs the
+  # resourcegroup blueprint composes (resourcegroups.azure.upbound.io).
+  # per-service packages (provider-azure-network etc) go on top if you need
+  # more resource types later
+  package: xpkg.upbound.io/upbound/provider-family-azure:v1.11.0
