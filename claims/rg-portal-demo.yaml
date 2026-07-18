@@ -1,0 +1,10 @@
+# requested through the portal, don't hand-edit - raise a new request instead
+apiVersion: platform.example.org/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: rg-portal-demo
+spec:
+  resourceGroupName: rg-portal-demo
+  location: westeurope
+  environment: dev
+  team: team-alpha
