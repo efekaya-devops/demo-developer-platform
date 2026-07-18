@@ -21,17 +21,22 @@ argocd pulls in everything under `apps/` on its own:
 |---|---|
 | `root` | app-of-apps, argocd manages its own config from this repo |
 | `monitoring` | prometheus + grafana, grafana's sidecar auto-loads dashboard configmaps |
-| `services` (ApplicationSet) | deploys any org repo tagged `idp-service` |
+| `services` (ApplicationSet) | deploys any org repo that has a `k8s/` folder |
 
 - argocd: http://localhost:8081
 - grafana: http://localhost:3001 (admin / demo)
 
-## why the tag-based discovery thing
+## why the folder-based discovery thing
 
-the golden path template tags every repo it creates with `idp-service`. the
-ApplicationSet in `apps/services.yaml` watches for that tag and deploys
-whatever it finds. so a new service goes live without anyone editing this
-repo - remove the tag (or delete the repo) and it un-deploys the same way.
+the ApplicationSet in `apps/services.yaml` watches the org for any repo with
+a `k8s/` folder and deploys what's in it. the golden path scaffolds that
+folder (and tags the repo `idp-service` too, handy for eyeballing the org on
+github). so a new service goes live without anyone editing this repo - delete
+the repo (or the k8s/ folder) and it un-deploys the same way.
+
+heads up: the SCM generator only works against a github *org*, not a personal
+account, and it needs `cloneProtocol: https` so it uses the token secret
+instead of looking for ssh keys.
 
 before using this for real: replace `GITHUB_ORG` in `apps/*.yaml` with your
 own github username/org (`grep -rl GITHUB_ORG apps/` to find them all).
