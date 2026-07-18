@@ -1,0 +1,27 @@
+# kind doesn't ship metrics-server, and without it backstage's kubernetes tab
+# shows a "problem retrieving objects" warning (it's only the metrics call
+# failing, the pod list works fine). also gives you kubectl top.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metrics-server
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes-sigs.github.io/metrics-server/
+    chart: metrics-server
+    targetRevision: 3.12.2
+    helm:
+      values: |
+        args:
+          # kind's kubelet serving certs aren't signed for this, so metrics-server
+          # refuses to scrape without it. fine on a laptop, not fine for real
+          - --kubelet-insecure-tls
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
