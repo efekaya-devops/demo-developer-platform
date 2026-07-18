@@ -1,0 +1,28 @@
+# provider + function. wave 1 - needs crossplane's CRDs from wave 0.
+# retries because the provider CRDs can take a minute to land
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crossplane-runtime
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/efekaya-devops/idp-gitops
+    targetRevision: main
+    path: crossplane
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crossplane-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 8
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m
