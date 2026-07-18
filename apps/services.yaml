@@ -12,6 +12,9 @@ spec:
     - scmProvider:
         # https so argocd uses the token secret, not ssh keys
         cloneProtocol: https
+        # default is 30 minutes, which is forever when you're stood in front of
+        # people waiting for a new service to show up
+        requeueAfterSeconds: 60
         github:
           organization: efekaya-devex-platform
           tokenRef: { secretName: github-token, key: token }
