@@ -1,42 +1,96 @@
 # idp-gitops
 
-The runtime side of the demo - local kind cluster, argocd, monitoring
-(prometheus + grafana), and service discovery so new repos get deployed
-without touching this repo by hand.
+The runtime side of the platform: a local kind cluster, ArgoCD, monitoring,
+Crossplane, and the discovery rules that deploy new services without anyone
+editing this repo by hand.
 
-Companion repos: [backstage-idp](../backstage-idp) (the portal),
-[terraform-modules](../terraform-modules) (infra modules),
-[platform-docs](../platform-docs) (docs).
+Companion repos:
+[backstage-idp](https://github.com/efekaya-devops/backstage-idp) (the portal) ·
+[terraform-modules](https://github.com/efekaya-devops/terraform-modules) ·
+[crossplane-modules](https://github.com/efekaya-devops/crossplane-modules)
 
 ## setup
 
 ```bash
+export GITHUB_TOKEN=ghp_...   # optional, only for pulling private ghcr images
 scripts/bootstrap.sh
 ```
 
-makes the kind cluster, installs argocd, applies the app-of-apps. from there
-argocd pulls in everything under `apps/` on its own:
+That makes the kind cluster, installs ArgoCD, and applies the app-of-apps.
+Everything else ArgoCD pulls in itself from `apps/`.
 
-| app | does what |
-|---|---|
-| `root` | app-of-apps, argocd manages its own config from this repo |
-| `monitoring` | prometheus + grafana, grafana's sidecar auto-loads dashboard configmaps |
-| `services` (ApplicationSet) | deploys any org repo that has a `k8s/` folder |
+| app | wave | does what |
+|---|---|---|
+| `root` | – | app-of-apps, argocd manages its own config from this repo |
+| `crossplane` | 0 | the crossplane control plane (helm) |
+| `crossplane-runtime` | 1 | the azure provider + the patch-and-transform function |
+| `platform-apis` | 2 | XRD + Composition, pulled straight from the crossplane-modules repo |
+| `infra` | 3 | whatever's in `claims/` - infra people asked for via the portal |
+| `monitoring` | – | kube-prometheus-stack; grafana's sidecar auto-loads dashboard configmaps |
+| `monitoring-rules` | – | alert rules for golden-path services |
+| `metrics-server` | – | kind doesn't ship one, and backstage's kubernetes tab wants it |
+| `cluster-rbac` | – | the read-only service account backstage uses |
+| `services` (ApplicationSet) | – | deploys any org repo that has a `k8s/` folder |
 
-- argocd: http://localhost:8081
-- grafana: http://localhost:3001 (admin / demo)
+The waves matter: crossplane's CRDs have to exist before a Provider applies,
+the provider's CRDs before the Composition, and the Composition before a claim.
 
-## why the folder-based discovery thing
+- ArgoCD: **https**://localhost:8081 (self-signed cert, click through)
+  `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d`
+- Grafana: http://localhost:3001 (`admin` / `demo`)
 
-the ApplicationSet in `apps/services.yaml` watches the org for any repo with
-a `k8s/` folder and deploys what's in it. the golden path scaffolds that
-folder (and tags the repo `idp-service` too, handy for eyeballing the org on
-github). so a new service goes live without anyone editing this repo - delete
-the repo (or the k8s/ folder) and it un-deploys the same way.
+## what lives where
 
-heads up: the SCM generator only works against a github *org*, not a personal
-account, and it needs `cloneProtocol: https` so it uses the token secret
-instead of looking for ssh keys.
+```
+apps/         one ArgoCD Application per thing above
+bootstrap/    kind cluster definition (3 nodes, port mappings for argocd + grafana)
+cluster/      service accounts / rbac the platform needs
+crossplane/   the Provider and Function CRs
+claims/       infra requests, applied by argocd  <- portal PRs land here
+infra/aws/    terraform requests, CI-validated only  <- portal PRs land here too
+monitoring/   helm values + alert rules
+```
 
-before using this for real: replace `GITHUB_ORG` in `apps/*.yaml` with your
-own github username/org (`grep -rl GITHUB_ORG apps/` to find them all).
+The split between `claims/` and `infra/` is the point: Crossplane claims are
+continuously reconciled by ArgoCD, the Terraform is validated by CI but nothing
+applies it. Adding an apply step (Atlantis, TFC, a CI job with credentials) is
+the gap between this and a real setup.
+
+## secrets you need in the cluster
+
+Neither is created by the bootstrap script, because they're yours:
+
+```bash
+# 1. so argocd can read this repo (only needed while it's private)
+kubectl -n argocd create secret generic idp-gitops-repo \
+  --from-literal=type=git \
+  --from-literal=url=https://github.com/efekaya-devops/idp-gitops \
+  --from-literal=username=<you> --from-literal=password=<token>
+kubectl -n argocd label secret idp-gitops-repo argocd.argoproj.io/secret-type=repository
+
+# 2. so the ApplicationSet can list repos in the org
+kubectl -n argocd create secret generic github-token --from-literal=token=<token>
+```
+
+The portal also needs a token for the cluster - mint one from the service
+account `cluster-rbac` creates and put it in `backstage-idp/.env`:
+
+```bash
+kubectl create token backstage-viewer -n default --duration=87600h
+```
+
+## discovery, and the two things that trip it up
+
+The ApplicationSet in `apps/services.yaml` watches the org for any repo with a
+`k8s/` folder and deploys it. The golden path scaffolds that folder, so new
+services go live on their own; delete the repo (or the folder) and it
+un-deploys the same way.
+
+Two things that will waste an afternoon otherwise:
+
+- the SCM generator only scans a github **org**, never a personal account
+- it needs `cloneProtocol: https`, or it goes looking for ssh keys and fails
+  with `SSH_AUTH_SOCK not-specified`
+
+It also polls every 60s (`requeueAfterSeconds`) rather than the 30 minute
+default, because waiting half an hour mid-demo is not a demo.
