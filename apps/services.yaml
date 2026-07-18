@@ -11,6 +11,8 @@ spec:
         github:
           organization: efekaya-devex-platform
           tokenRef: { secretName: github-token, key: token }
+          # https so argocd uses the token secret, not ssh keys
+          cloneProtocol: https
         filters:
           - topic: idp-service
   template:
