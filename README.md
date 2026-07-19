@@ -59,7 +59,8 @@ bootstrap/    kind cluster definition (3 nodes, port mappings for argocd + grafa
 cluster/      service accounts / rbac the platform needs
 crossplane/   the Provider and Function CRs
 claims/       infra requests, applied by argocd  <- portal PRs land here
-infra/aws/    terraform requests, CI-validated only  <- portal PRs land here too
+infra/aws/    terraform requests (s3, eks), CI-validated only  <- portal PRs too
+infra/gcp/    same for gcp (gcs, gke)
 monitoring/   helm values + alert rules
 ```
 

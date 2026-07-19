@@ -21,9 +21,13 @@ jobs:
         with:
           terraform_version: 1.9.8
       - name: fmt
-        run: terraform -chdir=infra/aws fmt -check -recursive
+        run: |
+          terraform -chdir=infra/aws fmt -check -recursive
+          terraform -chdir=infra/gcp fmt -check -recursive
       - name: validate
         # -backend=false so it doesn't need credentials or remote state
         run: |
           terraform -chdir=infra/aws init -backend=false -input=false
           terraform -chdir=infra/aws validate
+          terraform -chdir=infra/gcp init -backend=false -input=false
+          terraform -chdir=infra/gcp validate
