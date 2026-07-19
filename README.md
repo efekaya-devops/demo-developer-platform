@@ -35,6 +35,39 @@ clones of mine.
 That makes the kind cluster, installs ArgoCD, and applies the app-of-apps.
 Everything else ArgoCD pulls in itself from `apps/`.
 
+## running it as *yours*, not a clone of mine
+
+Cloned as-is, everything points at my GitHub orgs: ArgoCD syncs my repos, the
+portal lists my services. That's fine for looking around — but the moment you
+click **Create a Service**, the scaffolder tries to make a repo in an org you
+can't write to. To make it your own:
+
+1. **Fork the repos** into two orgs of your own (GitHub's service discovery
+   needs orgs, not personal accounts):
+   - a *platform* org for `idp-gitops`, `backstage-idp`, `terraform-modules`,
+     `crossplane-modules`, `platform-docs`
+   - a *teams* org for `team-alpha` and the services the golden path creates
+
+2. **Repoint everything at them** — the org names are baked into ~50 files
+   across three templating engines that share no runtime variable, so a single
+   `${VAR}` can't reach them all. `platform-orgs.env` is the one source of
+   truth and `set-org.sh` propagates it:
+
+   ```bash
+   # from a checkout sitting next to your other forked repos
+   scripts/set-org.sh            # shows the current orgs, changes nothing
+   scripts/set-org.sh my-platform-org my-teams-org
+   ```
+
+   It rewrites every occurrence, updates `platform-orgs.env`, and leaves the
+   change in your working trees. Review with `git diff`, then commit and push
+   each repo — the platform reads these from git, so nothing takes effect until
+   it's pushed.
+
+3. **Bootstrap** as above, with your own token.
+
+That's the whole migration: fork, one command, push.
+
 Going the other way:
 
 ```bash
