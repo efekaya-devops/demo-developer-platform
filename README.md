@@ -11,10 +11,26 @@ Companion repos:
 
 ## setup
 
+You need **your own GitHub token** — this repo is public so you can read it,
+but nothing here works with mine. A classic PAT with `repo` + `workflow` scope:
+
 ```bash
-export GITHUB_TOKEN=ghp_...   # optional, only for pulling private ghcr images
+export GITHUB_TOKEN=ghp_...   # yours, not a shared one
 scripts/bootstrap.sh
 ```
+
+What the token is actually for:
+
+| used by | why |
+|---|---|
+| the `services` ApplicationSet | lists repos in the org to find `k8s/` folders |
+| the portal's catalog discovery | reads `catalog/*.yaml` out of the team repos |
+| the portal's scaffolder | creates repos and opens pull requests as **you** |
+| pulling ghcr images | only if the packages are private |
+
+The last one matters if you're running your own copy: the golden path pushes
+images to *your* org's registry, so the services you create are yours, not
+clones of mine.
 
 That makes the kind cluster, installs ArgoCD, and applies the app-of-apps.
 Everything else ArgoCD pulls in itself from `apps/`.
@@ -76,18 +92,22 @@ credentials) is the gap between this and a real setup.
 
 ## secrets you need in the cluster
 
-Neither is created by the bootstrap script, because they're yours:
+Not created by the bootstrap script, because it's yours:
 
 ```bash
-# 1. so argocd can read this repo (only needed while it's private)
+# so the ApplicationSet can list repos in the org
+kubectl -n argocd create secret generic github-token --from-literal=token=$GITHUB_TOKEN
+```
+
+This repo and the team repos are public, so ArgoCD reads them anonymously and
+needs no repository credential. If you fork any of them private, add one:
+
+```bash
 kubectl -n argocd create secret generic idp-gitops-repo \
   --from-literal=type=git \
-  --from-literal=url=https://github.com/efekaya-devops/idp-gitops \
-  --from-literal=username=<you> --from-literal=password=<token>
+  --from-literal=url=https://github.com/<you>/idp-gitops \
+  --from-literal=username=<you> --from-literal=password=$GITHUB_TOKEN
 kubectl -n argocd label secret idp-gitops-repo argocd.argoproj.io/secret-type=repository
-
-# 2. so the ApplicationSet can list repos in the org
-kubectl -n argocd create secret generic github-token --from-literal=token=<token>
 ```
 
 The portal also needs a token for the cluster - mint one from the service
