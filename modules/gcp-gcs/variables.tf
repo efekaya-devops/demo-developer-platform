@@ -12,6 +12,12 @@ variable "location" {
   default = "EU"
 }
 
+variable "storage_class" {
+  description = "STANDARD / NEARLINE / COLDLINE / ARCHIVE - cost vs access-speed tradeoff"
+  type        = string
+  default     = "STANDARD"
+}
+
 variable "versioning" {
   type    = bool
   default = true

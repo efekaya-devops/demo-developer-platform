@@ -20,3 +20,8 @@ variable "node_count" {
   type    = number
   default = 2
 }
+
+variable "labels" {
+  type    = map(string)
+  default = {}
+}
