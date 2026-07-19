@@ -88,7 +88,9 @@ two things this does NOT do:
      and once you're sure:
        gh repo delete <org>/<name> --yes
 
-  2. remove the claims/*.yaml files from git. if you merged an infra PR, the
-     claim is still committed - argocd will put it back on the next sync.
-     git rm it, which is the deprovisioning story anyway.
+  2. remove the claims from the team repo - they live in team-alpha now, not
+     here. if you merged an infra PR the claim is still committed there, and
+     argocd will put it back on the next sync. git rm it (and its
+     catalog/<name>.yaml), which is the deprovisioning story anyway:
+       git clone https://github.com/efekaya-devex-platform/team-alpha
 EOF

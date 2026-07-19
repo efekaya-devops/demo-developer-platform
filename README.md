@@ -37,7 +37,7 @@ failing.
 | `crossplane` | 0 | the crossplane control plane (helm) |
 | `crossplane-runtime` | 1 | the azure provider + the patch-and-transform function |
 | `platform-apis` | 2 | XRD + Composition, pulled straight from the crossplane-modules repo |
-| `infra` | 3 | whatever's in `claims/` - infra people asked for via the portal |
+| `infra-team-alpha` | 3 | the claims in the team-alpha repo, requested via the portal |
 | `monitoring` | – | kube-prometheus-stack; grafana's sidecar auto-loads dashboard configmaps |
 | `monitoring-rules` | – | alert rules for golden-path services |
 | `metrics-server` | – | kind doesn't ship one, and backstage's kubernetes tab wants it |
@@ -58,18 +58,21 @@ apps/         one ArgoCD Application per thing above
 bootstrap/    kind cluster definition (3 nodes, port mappings for argocd + grafana)
 cluster/      service accounts / rbac the platform needs
 crossplane/   the Provider and Function CRs
-claims/       infra requests, applied by argocd  <- portal PRs land here
-infra/aws/    terraform requests (s3, eks), CI-validated only  <- portal PRs too
-infra/gcp/    same for gcp (gcs, gke)
-catalog/      one Resource entity per requested thing; backstage scans this
-              folder, so merging a request is what puts it on the catalog
+scripts/      bootstrap + teardown
 monitoring/   helm values + alert rules
 ```
 
-The split between `claims/` and `infra/` is the point: Crossplane claims are
-continuously reconciled by ArgoCD, the Terraform is validated by CI but nothing
-applies it. Adding an apply step (Atlantis, TFC, a CI job with credentials) is
-the gap between this and a real setup.
+Requested infrastructure does **not** live here. It lives in the team's own
+repo — [team-alpha](https://github.com/efekaya-devex-platform/team-alpha) — and
+this repo just points an ArgoCD Application at it (`apps/infra-team-alpha.yaml`).
+The platform owns the cluster; a product team owns the things it asked for, and
+can review and merge its own infrastructure without commit access here. Adding
+team-beta is a copy of that one file.
+
+The split inside a team repo still matters: Crossplane claims in `claims/` are
+continuously reconciled by ArgoCD, the Terraform in `infra/` is validated by CI
+but nothing applies it. Adding an apply step (Atlantis, TFC, a CI job with
+credentials) is the gap between this and a real setup.
 
 ## secrets you need in the cluster
 
