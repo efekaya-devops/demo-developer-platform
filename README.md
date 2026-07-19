@@ -19,6 +19,18 @@ scripts/bootstrap.sh
 That makes the kind cluster, installs ArgoCD, and applies the app-of-apps.
 Everything else ArgoCD pulls in itself from `apps/`.
 
+Going the other way:
+
+```bash
+scripts/teardown.sh reset   # drop the demo's claims + services, keep the platform
+scripts/teardown.sh all     # delete the cluster
+```
+
+`reset` is the one you want between demo runs. Note that a scaffolded service
+comes back within 60s unless you delete its github repo too — the repo is the
+source of truth, so that's the platform behaving correctly, not the script
+failing.
+
 | app | wave | does what |
 |---|---|---|
 | `root` | – | app-of-apps, argocd manages its own config from this repo |
