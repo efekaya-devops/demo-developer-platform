@@ -1,6 +1,6 @@
 # the blueprints themselves (XRD + Composition) come straight out of the
 # crossplane-modules repo - that repo is the source of truth for what our
-# platform APIs look like, this just installs one of them.
+# platform APIs look like, this installs all of them.
 # wave 2 - needs the provider CRDs from wave 1.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -14,7 +14,9 @@ spec:
   source:
     repoURL: https://github.com/efekaya-devops/crossplane-modules
     targetRevision: main
-    path: modules/resourcegroup
+    path: modules
+    directory:
+      recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: crossplane-system

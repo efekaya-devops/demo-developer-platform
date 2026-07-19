@@ -18,8 +18,57 @@ kind: Provider
 metadata:
   name: provider-family-azure
 spec:
-  # the family base provider - small, and it already ships the CRDs the
-  # resourcegroup blueprint composes (resourcegroups.azure.upbound.io).
-  # per-service packages (provider-azure-network etc) go on top if you need
-  # more resource types later
+  # the family base provider - ships the CRDs the resourcegroup blueprint
+  # composes (resourcegroups.azure.upbound.io). the per-service packages
+  # below add the CRD groups the other blueprints need, one provider per
+  # azure service so you only pay for what you compose
   package: xpkg.upbound.io/upbound/provider-family-azure:v1.11.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-azure-dbforpostgresql
+spec:
+  # database blueprint: FlexibleServer + FlexibleServerFirewallRule
+  package: xpkg.upbound.io/upbound/provider-azure-dbforpostgresql:v1.11.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-azure-keyvault
+spec:
+  # keyvault blueprint: Vault
+  package: xpkg.upbound.io/upbound/provider-azure-keyvault:v1.11.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-azure-network
+spec:
+  # virtualnetwork blueprint: VNet + Subnet + SecurityGroup + the association
+  package: xpkg.upbound.io/upbound/provider-azure-network:v1.11.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-azure-storage
+spec:
+  # storage blueprint: Account
+  package: xpkg.upbound.io/upbound/provider-azure-storage:v1.11.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-azure-web
+spec:
+  # webappplatform blueprint: ServicePlan + LinuxWebApp. note the CRD group
+  # is web.azure.upbound.io - there is no "appservice" package or group
+  package: xpkg.upbound.io/upbound/provider-azure-web:v1.11.0
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-azure-insights
+spec:
+  # webappplatform blueprint: ApplicationInsights
+  package: xpkg.upbound.io/upbound/provider-azure-insights:v1.11.0
