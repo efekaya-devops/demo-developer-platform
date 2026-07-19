@@ -32,5 +32,5 @@ not meant to be applied blind, put in your own bucket name / project id first.
 - no backend/state config in here on purpose, that's the consuming env's job
 - CI just runs fmt + validate, nothing fancy
 
-other repos: [backstage-idp](../backstage-idp) ·
-[idp-gitops](../idp-gitops) · [platform-docs](../platform-docs)
+other repos: [backstage-idp](https://github.com/efekaya-devops/backstage-idp) ·
+[idp-gitops](https://github.com/efekaya-devops/idp-gitops) · [platform-docs](https://github.com/efekaya-devops/platform-docs)
