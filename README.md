@@ -61,6 +61,8 @@ crossplane/   the Provider and Function CRs
 claims/       infra requests, applied by argocd  <- portal PRs land here
 infra/aws/    terraform requests (s3, eks), CI-validated only  <- portal PRs too
 infra/gcp/    same for gcp (gcs, gke)
+catalog/      one Resource entity per requested thing; backstage scans this
+              folder, so merging a request is what puts it on the catalog
 monitoring/   helm values + alert rules
 ```
 
