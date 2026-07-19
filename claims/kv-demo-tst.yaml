@@ -1,0 +1,11 @@
+# requested through the portal, don't hand-edit - raise a new request instead
+apiVersion: platform.example.org/v1alpha1
+kind: KeyVault
+metadata:
+  name: kv-demo-tst
+spec:
+  vaultName: kv-demo-tst
+  resourceGroup: rg-demo-test
+  tenantId: "12345678-abcd-1234-abcd-1234567890ab"
+  environment: dev
+  team: team-alpha
