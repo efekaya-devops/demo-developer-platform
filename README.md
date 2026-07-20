@@ -24,13 +24,3 @@ instead of the script. Pick whichever.
 
 `examples/aws` and `examples/gcp` show how the cloud modules wire together -
 not meant to be applied blind, put in your own bucket name / project id first.
-
-## notes to self
-
-- sizing (node count, instance type, sku) is all variables w/ defaults, so
-  demo vs "real" env is a tfvars difference, not a forked module
-- no backend/state config in here on purpose, that's the consuming env's job
-- CI just runs fmt + validate, nothing fancy
-
-other repos: [backstage-idp](https://github.com/efekaya-devops/backstage-idp) ·
-[idp-gitops](https://github.com/efekaya-devops/idp-gitops) · [platform-docs](https://github.com/efekaya-devops/platform-docs)

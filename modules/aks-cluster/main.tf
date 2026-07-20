@@ -49,8 +49,3 @@ resource "azurerm_kubernetes_cluster" "platform" {
 
   tags = local.tags
 }
-
-# CI/CD deploy access: let the Azure DevOps pipeline SP fetch cluster credentials
-# (az aks get-credentials -> listClusterUserCredential). Cluster-scoped,
-# least-privilege. Previously granted manually on the WRONG resource group
-# (rg-platform, not rg-aks), which broke the CI "Deploy to AKS" step.
