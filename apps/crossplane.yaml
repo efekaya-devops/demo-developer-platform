@@ -1,5 +1,3 @@
-# crossplane control plane itself. wave 0 - everything else here needs its
-# CRDs to exist first
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

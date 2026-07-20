@@ -15,7 +15,7 @@ You need **your own GitHub token** — this repo is public so you can read it,
 but nothing here works with mine. A classic PAT with `repo` + `workflow` scope:
 
 ```bash
-export GITHUB_TOKEN=ghp_...   # yours, not a shared one
+export GITHUB_TOKEN=ghp_...  
 scripts/bootstrap.sh
 ```
 
@@ -29,8 +29,7 @@ What the token is actually for:
 | pulling ghcr images | only if the packages are private |
 
 The last one matters if you're running your own copy: the golden path pushes
-images to *your* org's registry, so the services you create are yours, not
-clones of mine.
+images to *your* org's registry, so the services you create are yours.
 
 That makes the kind cluster, installs ArgoCD, and applies the app-of-apps.
 Everything else ArgoCD pulls in itself from `apps/`.
@@ -49,20 +48,14 @@ can't write to. To make it your own:
    - a *teams* org for `team-alpha` and the services the golden path creates
 
 2. **Repoint everything at them** — the org names are baked into ~50 files
-   across three templating engines that share no runtime variable, so a single
-   `${VAR}` can't reach them all. `platform-orgs.env` is the one source of
-   truth and `set-org.sh` propagates it:
+   across three templating engines that share no runtime variable. `platform-orgs.env` is the one source of
+   truth and `set-org.sh` repopulates it:
 
    ```bash
    # from a checkout sitting next to your other forked repos
    scripts/set-org.sh            # shows the current orgs, changes nothing
    scripts/set-org.sh my-platform-org my-teams-org
    ```
-
-   It rewrites every occurrence, updates `platform-orgs.env`, and leaves the
-   change in your working trees. Review with `git diff`, then commit and push
-   each repo — the platform reads these from git, so nothing takes effect until
-   it's pushed.
 
 3. **Bootstrap** as above, with your own token.
 
@@ -93,9 +86,6 @@ failing.
 | `cluster-rbac` | – | the read-only service account backstage uses |
 | `services` (ApplicationSet) | – | deploys any org repo that has a `k8s/` folder |
 
-The waves matter: crossplane's CRDs have to exist before a Provider applies,
-the provider's CRDs before the Composition, and the Composition before a claim.
-
 - ArgoCD: **https**://localhost:8081 (self-signed cert, click through)
   `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d`
 - Grafana: http://localhost:3001 (`admin` / `demo`)
@@ -115,13 +105,11 @@ Requested infrastructure does **not** live here. It lives in the team's own
 repo — [team-alpha](https://github.com/efekaya-devex-platform/team-alpha) — and
 this repo just points an ArgoCD Application at it (`apps/infra-team-alpha.yaml`).
 The platform owns the cluster; a product team owns the things it asked for, and
-can review and merge its own infrastructure without commit access here. Adding
-team-beta is a copy of that one file.
+can review and merge its own infrastructure without commit access here. 
 
 The split inside a team repo still matters: Crossplane claims in `claims/` are
 continuously reconciled by ArgoCD, the Terraform in `infra/` is validated by CI
-but nothing applies it. Adding an apply step (Atlantis, TFC, a CI job with
-credentials) is the gap between this and a real setup.
+but nothing applies it. 
 
 ## secrets you need in the cluster
 
@@ -150,18 +138,3 @@ account `cluster-rbac` creates and put it in `backstage-idp/.env`:
 kubectl create token backstage-viewer -n default --duration=87600h
 ```
 
-## discovery, and the two things that trip it up
-
-The ApplicationSet in `apps/services.yaml` watches the org for any repo with a
-`k8s/` folder and deploys it. The golden path scaffolds that folder, so new
-services go live on their own; delete the repo (or the folder) and it
-un-deploys the same way.
-
-Two things that will waste an afternoon otherwise:
-
-- the SCM generator only scans a github **org**, never a personal account
-- it needs `cloneProtocol: https`, or it goes looking for ssh keys and fails
-  with `SSH_AUTH_SOCK not-specified`
-
-It also polls every 60s (`requeueAfterSeconds`) rather than the 30 minute
-default, because waiting half an hour mid-demo is not a demo.

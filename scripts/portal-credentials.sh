@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 # prints the two cluster env vars backstage's kubernetes plugin wants.
-#
-# the service account itself is NOT created here - it's cluster/backstage-rbac.yaml,
-# applied by argocd like everything else. this only mints a token for it.
-# (an earlier version made its own 'portal-reader' SA bound to plain 'view',
-# which quietly reproduced the 403 on metrics.k8s.io that backstage-viewer's
-# extra ClusterRole exists to fix. one account, and it lives in git.)
 set -euo pipefail
 
 SA=backstage-viewer

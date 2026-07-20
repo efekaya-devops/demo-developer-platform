@@ -4,11 +4,6 @@ metadata:
   name: monitoring
   namespace: argocd
   annotations:
-    # kind runs a newer k8s than this argocd's built-in schema knows about, so
-    # the normal diff blows up on fields like .status.terminatingReplicas and
-    # the app sits on "Unknown" forever. this diffs via the api server instead,
-    # which obviously does know its own fields. (ServerSideApply below is a
-    # different thing - that's the apply, this is the compare.)
     argocd.argoproj.io/compare-options: ServerSideDiff=true
 spec:
   project: default

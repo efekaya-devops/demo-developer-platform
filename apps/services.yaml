@@ -1,7 +1,4 @@
-# any repo in the org with a k8s/ folder gets picked up and synced
-# automatically - that folder is what the golden path scaffolds, so in
-# practice it means "repos made by the portal". don't need to touch this
-# file when a new service shows up
+# any repo in the org with a k8s/ folder gets picked up and synced automatically 
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -12,8 +9,6 @@ spec:
     - scmProvider:
         # https so argocd uses the token secret, not ssh keys
         cloneProtocol: https
-        # default is 30 minutes, which is forever when you're stood in front of
-        # people waiting for a new service to show up
         requeueAfterSeconds: 60
         github:
           organization: efekaya-devex-platform

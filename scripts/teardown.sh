@@ -4,10 +4,7 @@
 #
 #   teardown.sh reset    remove what the demo created, leave the cluster up
 #   teardown.sh all      delete the kind cluster entirely
-#
-# neither touches github. repos the golden path created are deleted by hand
-# (or with the gh line this prints at the end) - doing that automatically felt
-# like a bad idea for a script people run half-awake before a presentation.
+
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -30,9 +27,6 @@ fi
 # re-syncs a claim you just deleted because the app is still there.
 
 echo "=== 1/4 crossplane claims ==="
-# delete the claim, not the composed resource - crossplane garbage collects
-# the managed resource itself. deleting the managed resource directly just
-# gets it recreated.
 if kubectl get resourcegroups.platform.example.org >/dev/null 2>&1; then
   kubectl delete resourcegroups.platform.example.org --all --ignore-not-found --timeout=60s || {
     echo "  claim didn't delete cleanly - see the finalizer note in the README"
@@ -42,20 +36,12 @@ else
 fi
 
 echo "=== 2/4 demo services ==="
-# select by ownerReference, not by name. anything the ApplicationSet generated
-# is owned by it; the platform's own apps aren't. matching on names instead
-# would spare a service unlucky enough to be called "monitoring-api".
 GENERATED=$(kubectl -n argocd get applications \
   -o jsonpath='{range .items[?(@.metadata.ownerReferences[0].kind=="ApplicationSet")]}{.metadata.name}{"\n"}{end}' 2>/dev/null)
 
 if [ -z "$GENERATED" ]; then
   echo "  (none)"
 else
-  # worth being blunt about this: deleting a generated Application achieves
-  # nothing on its own. the ApplicationSet re-creates it within requeueAfter
-  # (60s) for as long as the repo still exists in the org with a k8s/ folder.
-  # that's the platform working correctly, not a bug in this script. the repo
-  # is the source of truth, so the repo is what has to go.
   echo "$GENERATED" | sed 's/^/  /'
   echo
   echo "  ^ these come back in ~60s unless their github repos are gone."

@@ -1,9 +1,5 @@
-# alert rules for anything the golden path deployed. plain manifest rather than
-# helm values because the annotations use go templating ({{ $labels }}) and
-# escaping that through helm is more trouble than it's worth.
-#
+# alert rules for anything the golden path deployed.
 # release: monitoring is what makes prometheus actually load these - same
-# selector trick the servicemonitors use.
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -36,8 +32,6 @@ spec:
             description: "{{ $labels.pod }} has restarted more than twice in 10 minutes - usually a crashloop or a failing probe."
 
         - alert: ServiceNoTraffic
-          # not really a problem on a laptop, it's here to show a warning-level
-          # alert next to the critical one
           expr: sum by (job) (rate(app_requests_total{namespace="default"}[10m])) == 0
           for: 15m
           labels:

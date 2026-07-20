@@ -1,4 +1,3 @@
-# 3 nodes so it at least looks like a real cluster, not just 1 node doing everything
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: idp

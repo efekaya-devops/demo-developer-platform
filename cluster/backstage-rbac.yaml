@@ -1,6 +1,4 @@
-# read-only identity backstage uses for the kubernetes tab. the token itself
-# still has to be minted by hand (see the README) - this is just the account
-# and what it's allowed to look at.
+# read-only identity backstage uses for the kubernetes tab
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -20,8 +18,6 @@ subjects:
     name: backstage-viewer
     namespace: default
 ---
-# the built-in view role stops short of metrics.k8s.io, which is what backstage
-# asks for to show cpu/memory per pod
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

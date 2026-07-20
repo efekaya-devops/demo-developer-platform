@@ -1,9 +1,5 @@
-# whatever team-alpha has asked for via the portal. wave 3 - the blueprint
-# APIs have to exist before a claim against them will apply.
-#
-# the claims live in the team's own repo, not this one: the platform owns the
-# cluster, a product team owns the things it requested. adding team-beta means
-# copying this file and changing one line, which is the point.
+# whatever team-alpha has asked for via the portal.
+# the claims live in the team's own repo, not this one
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

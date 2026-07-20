@@ -1,4 +1,3 @@
-# kind doesn't ship metrics-server, and without it backstage's kubernetes tab
 # shows a "problem retrieving objects" warning (it's only the metrics call
 # failing, the pod list works fine). also gives you kubectl top.
 apiVersion: argoproj.io/v1alpha1

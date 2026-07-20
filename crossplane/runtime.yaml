@@ -1,11 +1,6 @@
-# the bits crossplane needs before any blueprint will render:
-# - the function the compositions call in their pipeline
-# - the provider that owns the azure CRDs the compositions compose
-#
 # note: no ProviderConfig here on purpose. without azure creds the composed
-# resources get created in the cluster but never reconcile to real azure -
-# which is exactly what we want for a local demo. drop in a ProviderConfig
-# with a service principal and the same claim provisions for real.
+# resources get created in the cluster but never reconcile to real azure 
+# drop in a ProviderConfig with a service principal and the same claim provisions for real.
 apiVersion: pkg.crossplane.io/v1
 kind: Function
 metadata:
@@ -61,8 +56,7 @@ kind: Provider
 metadata:
   name: provider-azure-web
 spec:
-  # webappplatform blueprint: ServicePlan + LinuxWebApp. note the CRD group
-  # is web.azure.upbound.io - there is no "appservice" package or group
+  # webappplatform blueprint: ServicePlan + LinuxWebApp. 
   package: xpkg.upbound.io/upbound/provider-azure-web:v1.11.0
 ---
 apiVersion: pkg.crossplane.io/v1
