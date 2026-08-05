@@ -1,0 +1,99 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: create-service
+  title: Create a Service (golden path)
+  description: >-
+    One click to a production-shaped service: a new GitHub repo with a
+    containerized Node.js app, CI that builds and pushes the image to GHCR,
+    Kubernetes manifests that ArgoCD picks up automatically, a ServiceMonitor
+    and a Grafana dashboard that appears the moment the service is live —
+    plus TechDocs and catalog registration.
+  tags:
+    - golden-path
+    - service
+    - recommended
+spec:
+  owner: platform-team
+  type: service
+
+  parameters:
+    - title: Service details
+      required:
+        - name
+        - owner
+      properties:
+        name:
+          title: Service name
+          type: string
+          description: Lowercase, hyphenated (becomes the repo + DNS name)
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: One line on what this service does
+        owner:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+    - title: Where to publish
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  steps:
+    - id: fetch
+      name: Render service skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+
+    - id: publish
+      name: Create GitHub repository
+      action: publish:github
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        repoVisibility: public
+        # keep the branch protected (PRs required) but let the owner self-merge -
+        # publish:github defaults to 1 approval + enforce admins, which locks a
+        # solo dev out of their own repo
+        requiredApprovingReviewCount: 0
+        protectEnforceAdmins: false
+        # marker so the idp services are easy to spot in the org - the
+        # ApplicationSet actually discovers by the k8s/ folder, not this
+        topics:
+          - idp-service
+
+    - id: register
+      name: Register in the catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}

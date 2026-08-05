@@ -1,0 +1,95 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: request-gcs-bucket
+  title: Request a GCS Bucket (Terraform)
+  description: >-
+    Ask the platform for a Google Cloud Storage bucket. You get a pull request
+    adding a call to the shared gcp-gcs module — CI validates the Terraform, a
+    human reviews, and merging is what provisions the bucket. Same request-as-a-PR
+    flow, but for GCP instead of AWS.
+  tags:
+    - infrastructure
+    - terraform
+    - gcp
+    - storage
+spec:
+  owner: platform-team
+  type: resource
+
+  parameters:
+    - title: What do you need
+      required:
+        - bucketName
+        - projectId
+        - team
+      properties:
+        bucketName:
+          title: Bucket name
+          type: string
+          description: Has to be globally unique across all of GCP, so pick something specific
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 63
+          ui:autofocus: true
+        projectId:
+          title: GCP Project ID
+          type: string
+          description: The GCP project where the bucket will be created
+          pattern: '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'
+          maxLength: 30
+        storageClass:
+          title: Storage class
+          type: string
+          default: STANDARD
+          enum:
+            - STANDARD
+            - NEARLINE
+            - COLDLINE
+            - ARCHIVE
+          description: Affects cost and access speed
+        environment:
+          title: Environment
+          type: string
+          default: dev
+          enum: [dev, test, acc, prod]
+        team:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+  steps:
+    - id: fetch
+      name: Render the terraform
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          bucketName: ${{ parameters.bucketName }}
+          projectId: ${{ parameters.projectId }}
+          storageClass: ${{ parameters.storageClass }}
+          environment: ${{ parameters.environment }}
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: gcs-${{ parameters.bucketName }}
+        title: 'infra: gcs bucket ${{ parameters.bucketName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          - project: `${{ parameters.projectId }}`
+          - storage class: `${{ parameters.storageClass }}`
+          - environment: `${{ parameters.environment }}`
+
+          Uses the shared `gcp-gcs` module. CI validates the Terraform on this PR.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

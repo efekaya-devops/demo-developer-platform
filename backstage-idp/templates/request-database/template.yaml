@@ -1,0 +1,87 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: request-database
+  title: Request a Database (Crossplane)
+  description: >-
+    Ask the platform for a PostgreSQL database on Azure. You get a pull request
+    against the GitOps repo containing a Crossplane claim — merge it and ArgoCD
+    applies it, Crossplane provisions the actual Azure managed database. No portal
+    access to the cloud, no ticket, request is reviewable in Git.
+  tags:
+    - infrastructure
+    - crossplane
+    - azure
+    - database
+spec:
+  owner: platform-team
+  type: resource
+
+  parameters:
+    - title: What do you need
+      required:
+        - databaseName
+        - serverName
+        - resourceGroup
+        - team
+      properties:
+        databaseName:
+          title: Database name
+          type: string
+          description: Lowercase, hyphenated. Name of the database on the server.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          minLength: 3
+          maxLength: 40
+          ui:autofocus: true
+        serverName:
+          title: Server name
+          type: string
+          description: Lowercase, hyphenated, 3-40 chars. Name of the PostgreSQL server.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          minLength: 3
+          maxLength: 40
+        resourceGroup:
+          title: Resource group (existing)
+          type: string
+          description: The Azure resource group this database belongs to. Must already exist.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+        team:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+  steps:
+    - id: fetch
+      name: Render the claim
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          databaseName: ${{ parameters.databaseName }}
+          serverName: ${{ parameters.serverName }}
+          resourceGroup: ${{ parameters.resourceGroup }}
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: db-${{ parameters.databaseName }}
+        title: 'infra: database ${{ parameters.databaseName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          - server: `${{ parameters.serverName }}`
+          - resource group: `${{ parameters.resourceGroup }}`
+
+          Merging this applies the claim via ArgoCD.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

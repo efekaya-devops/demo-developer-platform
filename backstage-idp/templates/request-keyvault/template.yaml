@@ -1,0 +1,92 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: request-keyvault
+  title: Request a Key Vault (Crossplane)
+  description: >-
+    Ask the platform for an Azure Key Vault for secrets management. You get a pull
+    request against the GitOps repo containing a Crossplane claim — merge it and
+    ArgoCD applies it, Crossplane provisions the actual Azure Key Vault. Portal
+    never needs direct cloud access.
+  tags:
+    - infrastructure
+    - crossplane
+    - azure
+    - security
+spec:
+  owner: platform-team
+  type: resource
+
+  parameters:
+    - title: What do you need
+      required:
+        - vaultName
+        - resourceGroup
+        - tenantId
+        - team
+      properties:
+        vaultName:
+          title: Vault name
+          type: string
+          description: Lowercase, hyphenated, 3-24 chars (Azure's limit for vault names).
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          minLength: 3
+          maxLength: 24
+          ui:autofocus: true
+        resourceGroup:
+          title: Resource group (existing)
+          type: string
+          description: The Azure resource group this vault belongs to. Must already exist.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+        tenantId:
+          title: Azure Tenant ID
+          type: string
+          description: Your Azure AD tenant ID (UUID format)
+          pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+          ui:placeholder: '00000000-0000-0000-0000-000000000000'
+        environment:
+          title: Environment
+          type: string
+          default: dev
+          enum: [dev, test, acc, prod]
+        team:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+  steps:
+    - id: fetch
+      name: Render the claim
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          vaultName: ${{ parameters.vaultName }}
+          resourceGroup: ${{ parameters.resourceGroup }}
+          tenantId: ${{ parameters.tenantId }}
+          environment: ${{ parameters.environment }}
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: kv-${{ parameters.vaultName }}
+        title: 'infra: key vault ${{ parameters.vaultName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          - resource group: `${{ parameters.resourceGroup }}`
+          - tenant: `${{ parameters.tenantId }}`
+
+          Merging this applies the claim via ArgoCD.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

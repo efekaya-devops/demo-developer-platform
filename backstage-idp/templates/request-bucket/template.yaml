@@ -1,0 +1,79 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: request-bucket
+  title: Request an S3 Bucket (Terraform)
+  description: >-
+    Ask the platform for an S3 bucket. You get a pull request adding a call to
+    the shared aws-s3 module — CI checks the Terraform is valid, a human reviews
+    the diff, and merging is what makes it real. Same request-as-a-PR flow as the
+    Crossplane path, just a different engine underneath.
+  tags:
+    - infrastructure
+    - terraform
+    - aws
+spec:
+  owner: platform-team
+  type: resource
+
+  parameters:
+    - title: What do you need
+      required:
+        - bucketName
+        - team
+      properties:
+        bucketName:
+          title: Bucket name
+          type: string
+          description: Has to be globally unique across all of AWS, so pick something specific
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 63
+          ui:autofocus: true
+        versioning:
+          title: Keep old versions of objects
+          type: boolean
+          default: true
+        environment:
+          title: Environment
+          type: string
+          default: dev
+          enum: [dev, test, acc, prod]
+        team:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+  steps:
+    - id: fetch
+      name: Render the terraform
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          bucketName: ${{ parameters.bucketName }}
+          versioning: ${{ parameters.versioning }}
+          environment: ${{ parameters.environment }}
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: bucket-${{ parameters.bucketName }}
+        title: 'infra: s3 bucket ${{ parameters.bucketName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          - versioning: `${{ parameters.versioning }}`
+          - environment: `${{ parameters.environment }}`
+
+          Uses the shared `aws-s3` module. CI validates the Terraform on this PR.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

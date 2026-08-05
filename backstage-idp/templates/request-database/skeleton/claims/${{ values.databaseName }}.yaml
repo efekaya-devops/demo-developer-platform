@@ -1,0 +1,9 @@
+# requested through the portal, don't hand-edit - raise a new request instead
+apiVersion: platform.example.org/v1alpha1
+kind: Database
+metadata:
+  name: ${{ values.databaseName }}
+spec:
+  serverName: ${{ values.serverName }}
+  resourceGroup: ${{ values.resourceGroup }}
+  team: ${{ values.team }}

@@ -1,0 +1,38 @@
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: demo-dev
+spec:
+  profile:
+    displayName: Demo Developer
+  memberOf: [team-alpha]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: team-alpha
+  description: The demo product team
+spec:
+  type: team
+  children: []
+---
+# every template declares `owner: platform-team`, so the group has to exist or
+# each one shows up in the catalog with a dangling owner
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: platform-team
+  description: Owns the golden paths, the blueprints and the platform itself
+spec:
+  type: team
+  children: []
+---
+# what the infra requests belong to. gives the resources somewhere to hang
+# rather than floating loose in the catalog
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: platform-infra
+  description: Infrastructure requested through the portal
+spec:
+  owner: platform-team

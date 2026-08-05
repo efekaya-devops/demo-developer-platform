@@ -1,0 +1,22 @@
+# requested through the portal, don't hand-edit - raise a new request instead.
+# the portal discovers this file on merge, which is what puts the resource on
+# the catalog. no registration step needed.
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ${{ values.bucketName }}
+  description: >-
+    S3 bucket, requested through the portal. Terraform is CI-validated only -
+    nothing applies it, so this is a request on record, not a live bucket.
+  tags:
+    - aws
+    - terraform
+    - storage
+    - ${{ values.environment }}
+  links:
+    - title: The terraform in git
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/infra/aws/${{ values.bucketName }}.tf
+spec:
+  type: aws-s3-bucket
+  owner: ${{ values.team }}
+  system: platform-infra

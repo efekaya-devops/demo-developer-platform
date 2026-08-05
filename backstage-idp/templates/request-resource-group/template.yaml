@@ -1,0 +1,85 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: request-resource-group
+  title: Request an Azure Resource Group (Crossplane)
+  description: >-
+    Ask the platform for an Azure Resource Group. You get a pull request against
+    the GitOps repo containing a Crossplane claim — merge it and ArgoCD applies
+    it, Crossplane composes the underlying Azure resource. No portal access to
+    the cloud, no ticket, and the request itself is reviewable in Git.
+  tags:
+    - infrastructure
+    - crossplane
+    - azure
+spec:
+  owner: platform-team
+  type: resource
+
+  parameters:
+    - title: What do you need
+      required:
+        - resourceGroupName
+        - team
+      properties:
+        resourceGroupName:
+          title: Resource group name
+          type: string
+          description: Lowercase, hyphenated. Gets created in Azure under this name.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+          ui:autofocus: true
+        location:
+          title: Region
+          type: string
+          default: westeurope
+          enum:
+            - westeurope
+            - northeurope
+            - uksouth
+        environment:
+          title: Environment
+          type: string
+          default: dev
+          enum: [dev, test, acc, prod]
+        team:
+          title: Owning team
+          type: string
+          description: Applied as a tag on the resource group
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+  steps:
+    - id: fetch
+      name: Render the claim
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          resourceGroupName: ${{ parameters.resourceGroupName }}
+          location: ${{ parameters.location }}
+          environment: ${{ parameters.environment }}
+          # OwnerPicker hands back "group:default/team-alpha", the tag just wants the name
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: rg-${{ parameters.resourceGroupName }}
+        title: 'infra: resource group ${{ parameters.resourceGroupName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          - region: `${{ parameters.location }}`
+          - environment: `${{ parameters.environment }}`
+
+          Merging this applies the claim via ArgoCD.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

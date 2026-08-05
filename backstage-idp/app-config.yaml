@@ -1,0 +1,140 @@
+app:
+  title: IDP — Internal Developer Platform
+  baseUrl: http://localhost:3000
+  extensions:
+    - page:scaffolder: false
+
+organization:
+  name: Platform Team
+
+backend:
+  baseUrl: http://localhost:7007
+  listen:
+    port: 7007
+  csp:
+    connect-src: ["'self'", 'http:', 'https:']
+  cors:
+    origin: http://localhost:3000
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+  database:
+    client: better-sqlite3
+    connection:
+      directory: .data
+
+integrations:
+  github:
+    - host: github.com
+      # needs repo + workflow scopes
+      token: ${GITHUB_TOKEN}
+
+auth:
+  environment: development
+  providers:
+    guest: {}
+
+scaffolder: {}
+
+techdocs:
+  builder: local
+  generator:
+    runIn: docker
+  publisher:
+    type: local
+
+catalog:
+  import:
+    entityFilename: catalog-info.yaml
+    pullRequestBranchName: backstage-integration
+  rules:
+    - allow: [Component, System, API, Resource, Location, User, Group]
+  locations:
+    # the golden paths - a backend service and a frontend
+    - type: file
+      target: ../../templates/create-service/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/create-react-app/template.yaml
+      rules:
+        - allow: [Template]
+    # infra self-service - each of these ends up as a PR on the gitops repo.
+    # crossplane-backed (claims/, continuously reconciled):
+    - type: file
+      target: ../../templates/request-resource-group/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-database/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-keyvault/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-virtualnetwork/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-webappplatform/template.yaml
+      rules:
+        - allow: [Template]
+    # terraform-backed (infra/, CI-validated only):
+    - type: file
+      target: ../../templates/request-bucket/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-eks-cluster/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-gcs-bucket/template.yaml
+      rules:
+        - allow: [Template]
+    - type: file
+      target: ../../templates/request-gke-cluster/template.yaml
+      rules:
+        - allow: [Template]
+    # fake users/groups so ownership shows up somewhere instead of blank
+    - type: file
+      target: ../../examples/org.yaml
+      rules:
+        - allow: [User, Group, System]
+  # infra doesn't get registered by hand. this scans the gitops repo for
+  # entity files under catalog/ and picks up whatever is there 
+  providers:
+    github:
+      # a team's requested infrastructure
+      teamAlpha:
+        organization: efekaya-devex-platform
+        catalogPath: /catalog/*.yaml
+        filters:
+          repository: '^team-alpha$'
+          branch: main
+        schedule:
+          frequency: { minutes: 1 }
+          timeout: { minutes: 3 }
+      # the services the golden path creates. without this they only exist in
+      # whoever's laptop registered them
+      services:
+        organization: efekaya-devex-platform
+        catalogPath: /catalog-info.yaml
+        filters:
+          branch: main
+        schedule:
+          frequency: { minutes: 1 }
+          timeout: { minutes: 3 }
+
+kubernetes:
+  serviceLocatorMethod:
+    type: multiTenant
+  clusterLocatorMethods:
+    - type: config
+      clusters:
+        - name: kind-idp
+          url: ${KUBERNETES_CLUSTER_URL}
+          authProvider: serviceAccount
+          serviceAccountToken: ${KUBERNETES_SA_TOKEN}
+          skipTLSVerify: true

@@ -1,0 +1,10 @@
+# requested through the portal, don't hand-edit - raise a new request instead
+apiVersion: platform.example.org/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: ${{ values.resourceGroupName }}
+spec:
+  resourceGroupName: ${{ values.resourceGroupName }}
+  location: ${{ values.location }}
+  environment: ${{ values.environment }}
+  team: ${{ values.team }}

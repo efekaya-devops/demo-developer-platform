@@ -1,0 +1,21 @@
+# requested through the portal, don't hand-edit - raise a new request instead.
+# the portal discovers this file on merge, which is what puts the resource on
+# the catalog. no registration step needed.
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ${{ values.vnetName }}
+  description: Azure virtual network, requested through the portal
+  tags:
+    - azure
+    - crossplane
+    - networking
+  links:
+    - title: The claim in git
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/claims/${{ values.vnetName }}.yaml
+spec:
+  type: azure-virtual-network
+  owner: ${{ values.team }}
+  system: platform-infra
+  dependsOn:
+    - resource:default/${{ values.resourceGroup }}

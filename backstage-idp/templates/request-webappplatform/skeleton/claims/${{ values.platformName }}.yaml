@@ -1,0 +1,9 @@
+# requested through the portal, don't hand-edit - raise a new request instead
+apiVersion: platform.example.org/v1alpha1
+kind: WebAppPlatform
+metadata:
+  name: ${{ values.platformName }}
+spec:
+  platformName: ${{ values.platformName }}
+  resourceGroup: ${{ values.resourceGroup }}
+  team: ${{ values.team }}

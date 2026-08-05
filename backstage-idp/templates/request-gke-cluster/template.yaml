@@ -1,0 +1,112 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: request-gke-cluster
+  title: Request a GCP GKE Cluster (Terraform)
+  description: >-
+    Ask the platform for a Google Kubernetes Engine cluster. You get a pull
+    request adding a call to the shared gcp-gke module — CI validates the
+    Terraform, a human reviews, and merging is what provisions the cluster.
+    Zonal (not regional) to keep the cost story honest.
+  tags:
+    - infrastructure
+    - terraform
+    - gcp
+    - kubernetes
+spec:
+  owner: platform-team
+  type: resource
+
+  parameters:
+    - title: What do you need
+      required:
+        - clusterName
+        - projectId
+        - team
+      properties:
+        clusterName:
+          title: Cluster name
+          type: string
+          description: Lowercase, hyphenated. Unique within the project.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+          ui:autofocus: true
+        projectId:
+          title: GCP Project ID
+          type: string
+          description: The GCP project where the cluster will be created
+          pattern: '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$'
+          maxLength: 30
+        zone:
+          title: Zone
+          type: string
+          default: europe-west4-a
+          enum:
+            - europe-west4-a
+            - europe-west1-b
+            - europe-north1-a
+        machineType:
+          title: Node machine type
+          type: string
+          default: e2-medium
+          enum:
+            - e2-medium
+            - e2-standard-2
+            - e2-standard-4
+            - n2-standard-2
+        nodeCount:
+          title: Number of nodes
+          type: number
+          default: 2
+          minimum: 1
+          maximum: 10
+        environment:
+          title: Environment
+          type: string
+          default: dev
+          enum: [dev, test, acc, prod]
+        team:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+  steps:
+    - id: fetch
+      name: Render the terraform
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          clusterName: ${{ parameters.clusterName }}
+          projectId: ${{ parameters.projectId }}
+          zone: ${{ parameters.zone }}
+          machineType: ${{ parameters.machineType }}
+          nodeCount: ${{ parameters.nodeCount }}
+          environment: ${{ parameters.environment }}
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: gke-${{ parameters.clusterName }}
+        title: 'infra: gke cluster ${{ parameters.clusterName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          - project: `${{ parameters.projectId }}`
+          - zone: `${{ parameters.zone }}`
+          - machine type: `${{ parameters.machineType }}`
+          - node count: `${{ parameters.nodeCount }}`
+          - environment: `${{ parameters.environment }}`
+
+          Uses the shared `gcp-gke` module. CI validates the Terraform on this PR.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

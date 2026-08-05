@@ -1,0 +1,76 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: request-virtualnetwork
+  title: Request a Virtual Network (Crossplane)
+  description: >-
+    Ask the platform for an Azure Virtual Network. You get a pull request against
+    the GitOps repo containing a Crossplane claim — merge it and ArgoCD applies
+    it, Crossplane provisions the actual Azure VNet. Foundation for most Azure
+    infrastructure.
+  tags:
+    - infrastructure
+    - crossplane
+    - azure
+    - networking
+spec:
+  owner: platform-team
+  type: resource
+
+  parameters:
+    - title: What do you need
+      required:
+        - vnetName
+        - resourceGroup
+        - team
+      properties:
+        vnetName:
+          title: Virtual network name
+          type: string
+          description: Lowercase, hyphenated. Name of the virtual network.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+          ui:autofocus: true
+        resourceGroup:
+          title: Resource group (existing)
+          type: string
+          description: The Azure resource group this VNet belongs to. Must already exist.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+        team:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+  steps:
+    - id: fetch
+      name: Render the claim
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          vnetName: ${{ parameters.vnetName }}
+          resourceGroup: ${{ parameters.resourceGroup }}
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: vnet-${{ parameters.vnetName }}
+        title: 'infra: virtual network ${{ parameters.vnetName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          - resource group: `${{ parameters.resourceGroup }}`
+
+          Merging this applies the claim via ArgoCD.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

@@ -1,0 +1,19 @@
+# requested through the portal, don't hand-edit - raise a new request instead.
+# the portal discovers this file on merge, which is what puts the resource on
+# the catalog. no registration step needed.
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ${{ values.resourceGroupName }}
+  description: Azure resource group in ${{ values.location }}, requested through the portal
+  tags:
+    - azure
+    - crossplane
+    - ${{ values.environment }}
+  links:
+    - title: The claim in git
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/claims/${{ values.resourceGroupName }}.yaml
+spec:
+  type: azure-resource-group
+  owner: ${{ values.team }}
+  system: platform-infra

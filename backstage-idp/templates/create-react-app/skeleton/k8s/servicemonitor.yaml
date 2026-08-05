@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ${{ values.name }}
+  labels:
+    app: ${{ values.name }}
+    release: monitoring   # picked up by kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: ${{ values.name }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+      # the platform's alerts and dashboards are written against
+      # app_requests_total. nginx calls its counter something else, so rename
+      # it on the way in rather than special-casing every rule for frontends.
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: nginx_http_requests_total
+          targetLabel: __name__
+          replacement: app_requests_total
+          action: replace

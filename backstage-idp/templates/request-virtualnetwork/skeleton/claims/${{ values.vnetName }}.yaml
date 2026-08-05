@@ -1,0 +1,9 @@
+# requested through the portal, don't hand-edit - raise a new request instead
+apiVersion: platform.example.org/v1alpha1
+kind: VirtualNetwork
+metadata:
+  name: ${{ values.vnetName }}
+spec:
+  vnetName: ${{ values.vnetName }}
+  resourceGroup: ${{ values.resourceGroup }}
+  team: ${{ values.team }}

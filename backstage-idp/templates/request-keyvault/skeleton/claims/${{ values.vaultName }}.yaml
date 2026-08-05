@@ -1,0 +1,11 @@
+# requested through the portal, don't hand-edit - raise a new request instead
+apiVersion: platform.example.org/v1alpha1
+kind: KeyVault
+metadata:
+  name: ${{ values.vaultName }}
+spec:
+  vaultName: ${{ values.vaultName }}
+  resourceGroup: ${{ values.resourceGroup }}
+  tenantId: "${{ values.tenantId }}"
+  environment: ${{ values.environment }}
+  team: ${{ values.team }}

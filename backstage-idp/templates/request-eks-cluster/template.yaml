@@ -1,0 +1,102 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: request-eks-cluster
+  title: Request an AWS EKS Cluster (Terraform)
+  description: >-
+    Ask the platform for an Amazon EKS Kubernetes cluster. You get a pull request
+    adding a call to the shared aws-eks module — CI validates the Terraform, a
+    human reviews, and merging is what provisions the cluster. Same request-as-a-PR
+    flow as the Crossplane path, but using Terraform instead.
+  tags:
+    - infrastructure
+    - terraform
+    - aws
+    - kubernetes
+spec:
+  owner: platform-team
+  type: resource
+
+  parameters:
+    - title: What do you need
+      required:
+        - clusterName
+        - team
+      properties:
+        clusterName:
+          title: Cluster name
+          type: string
+          description: Lowercase, hyphenated. Unique identifier for the cluster.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+          ui:autofocus: true
+        kubernetesVersion:
+          title: Kubernetes version
+          type: string
+          default: "1.30"
+          description: EKS Kubernetes version
+        nodeInstanceType:
+          title: Node instance type
+          type: string
+          default: t3.medium
+          description: EC2 instance type for worker nodes
+          enum:
+            - t3.medium
+            - t3.large
+            - t3.xlarge
+            - m5.large
+            - m5.xlarge
+        nodeCount:
+          title: Number of nodes
+          type: number
+          default: 2
+          minimum: 1
+          maximum: 10
+        environment:
+          title: Environment
+          type: string
+          default: dev
+          enum: [dev, test, acc, prod]
+        team:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+  steps:
+    - id: fetch
+      name: Render the terraform
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          clusterName: ${{ parameters.clusterName }}
+          kubernetesVersion: ${{ parameters.kubernetesVersion }}
+          nodeInstanceType: ${{ parameters.nodeInstanceType }}
+          nodeCount: ${{ parameters.nodeCount }}
+          environment: ${{ parameters.environment }}
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: eks-${{ parameters.clusterName }}
+        title: 'infra: eks cluster ${{ parameters.clusterName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          - kubernetes version: `${{ parameters.kubernetesVersion }}`
+          - node instance: `${{ parameters.nodeInstanceType }}`
+          - node count: `${{ parameters.nodeCount }}`
+          - environment: `${{ parameters.environment }}`
+
+          Uses the shared `aws-eks` module. CI validates the Terraform on this PR.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

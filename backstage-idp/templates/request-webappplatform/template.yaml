@@ -1,0 +1,77 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: request-webappplatform
+  title: Request a Web App Platform (Crossplane)
+  description: >-
+    Ask the platform for an Azure App Service environment ready to run web apps.
+    You get a pull request against the GitOps repo containing a Crossplane claim —
+    merge it and ArgoCD applies it, Crossplane provisions the platform. Portal
+    never needs cloud credentials.
+  tags:
+    - infrastructure
+    - crossplane
+    - azure
+    - appservice
+spec:
+  owner: platform-team
+  type: resource
+
+  parameters:
+    - title: What do you need
+      required:
+        - platformName
+        - resourceGroup
+        - team
+      properties:
+        platformName:
+          title: Platform name
+          type: string
+          description: Lowercase, no hyphens, 3-18 chars. Everything else gets derived from it.
+          pattern: '^[a-z0-9]+$'
+          minLength: 3
+          maxLength: 18
+          ui:autofocus: true
+        resourceGroup:
+          title: Resource group (existing)
+          type: string
+          description: The Azure resource group for this platform. Must already exist.
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+        team:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+
+  steps:
+    - id: fetch
+      name: Render the claim
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          platformName: ${{ parameters.platformName }}
+          resourceGroup: ${{ parameters.resourceGroup }}
+          team: ${{ parameters.team | parseEntityRef | pick('name') }}
+
+    - id: pr
+      name: Open a pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=efekaya-devex-platform&repo=team-alpha
+        branchName: app-${{ parameters.platformName }}
+        title: 'infra: web app platform ${{ parameters.platformName }}'
+        description: |
+          Requested via the portal by the ${{ parameters.team }} team.
+
+          - resource group: `${{ parameters.resourceGroup }}`
+
+          Merging this applies the claim via ArgoCD.
+
+  output:
+    links:
+      - title: Review the pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

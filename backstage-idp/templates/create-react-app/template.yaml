@@ -1,0 +1,98 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: create-react-app
+  title: Create a React App (golden path)
+  description: >-
+    The same paved road as the service template, for a frontend: a Vite + React
+    app built to static files and served by nginx, CI that pushes to GHCR,
+    Kubernetes manifests ArgoCD picks up on its own, and — the part that
+    usually gets skipped for frontends — real metrics, a Grafana dashboard and
+    the same alerts every backend service gets.
+  tags:
+    - golden-path
+    - frontend
+    - react
+spec:
+  owner: platform-team
+  type: website
+
+  parameters:
+    - title: App details
+      required:
+        - name
+        - owner
+      properties:
+        name:
+          title: App name
+          type: string
+          description: Lowercase, hyphenated (becomes the repo + DNS name)
+          pattern: '^[a-z0-9]+(-[a-z0-9]+)*$'
+          maxLength: 40
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          description: One line on what this app is for
+        owner:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+    - title: Where to publish
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+
+  steps:
+    - id: fetch
+      name: Render app skeleton
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: ${{ parameters.owner }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+
+    - id: publish
+      name: Create GitHub repository
+      action: publish:github
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        repoVisibility: public
+        # same reasoning as the service template: keep PRs required but let a
+        # solo owner merge their own, otherwise they're locked out of the repo
+        # the portal just made for them
+        requiredApprovingReviewCount: 0
+        protectEnforceAdmins: false
+        topics:
+          - idp-service
+          - frontend
+
+    - id: register
+      name: Register in the catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
