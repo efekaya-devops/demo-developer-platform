@@ -1,0 +1,19 @@
+# service accounts / rbac the platform itself needs
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-rbac
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/efekaya-devops/idp-gitops
+    targetRevision: main
+    path: cluster
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

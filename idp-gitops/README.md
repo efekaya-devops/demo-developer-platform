@@ -1,0 +1,140 @@
+# idp-gitops
+
+The runtime side of the platform: a local kind cluster, ArgoCD, monitoring,
+Crossplane, and the discovery rules that deploy new services without anyone
+editing this repo by hand.
+
+Companion repos:
+[backstage-idp](https://github.com/efekaya-devops/backstage-idp) (the portal) ·
+[terraform-modules](https://github.com/efekaya-devops/terraform-modules) ·
+[crossplane-modules](https://github.com/efekaya-devops/crossplane-modules)
+
+## setup
+
+You need **your own GitHub token** — this repo is public so you can read it,
+but nothing here works with mine. A classic PAT with `repo` + `workflow` scope:
+
+```bash
+export GITHUB_TOKEN=ghp_...  
+scripts/bootstrap.sh
+```
+
+What the token is actually for:
+
+| used by | why |
+|---|---|
+| the `services` ApplicationSet | lists repos in the org to find `k8s/` folders |
+| the portal's catalog discovery | reads `catalog/*.yaml` out of the team repos |
+| the portal's scaffolder | creates repos and opens pull requests as **you** |
+| pulling ghcr images | only if the packages are private |
+
+The last one matters if you're running your own copy: the golden path pushes
+images to *your* org's registry, so the services you create are yours.
+
+That makes the kind cluster, installs ArgoCD, and applies the app-of-apps.
+Everything else ArgoCD pulls in itself from `apps/`.
+
+## running it as *yours*, not a clone of mine
+
+Cloned as-is, everything points at my GitHub orgs: ArgoCD syncs my repos, the
+portal lists my services. That's fine for looking around — but the moment you
+click **Create a Service**, the scaffolder tries to make a repo in an org you
+can't write to. To make it your own:
+
+1. **Fork the repos** into two orgs of your own (GitHub's service discovery
+   needs orgs, not personal accounts):
+   - a *platform* org for `idp-gitops`, `backstage-idp`, `terraform-modules`,
+     `crossplane-modules`, `platform-docs`
+   - a *teams* org for `team-alpha` and the services the golden path creates
+
+2. **Repoint everything at them** — the org names are baked into ~50 files
+   across three templating engines that share no runtime variable. `platform-orgs.env` is the one source of
+   truth and `set-org.sh` repopulates it:
+
+   ```bash
+   # from a checkout sitting next to your other forked repos
+   scripts/set-org.sh            # shows the current orgs, changes nothing
+   scripts/set-org.sh my-platform-org my-teams-org
+   ```
+
+3. **Bootstrap** as above, with your own token.
+
+That's the whole migration: fork, one command, push.
+
+Going the other way:
+
+```bash
+scripts/teardown.sh reset   # drop the demo's claims + services, keep the platform
+scripts/teardown.sh all     # delete the cluster
+```
+
+`reset` is the one you want between demo runs. Note that a scaffolded service
+comes back within 60s unless you delete its github repo too — the repo is the
+source of truth, so that's the platform behaving correctly, not the script
+failing.
+
+| app | wave | does what |
+|---|---|---|
+| `root` | – | app-of-apps, argocd manages its own config from this repo |
+| `crossplane` | 0 | the crossplane control plane (helm) |
+| `crossplane-runtime` | 1 | the azure provider + the patch-and-transform function |
+| `platform-apis` | 2 | XRD + Composition, pulled straight from the crossplane-modules repo |
+| `infra-team-alpha` | 3 | the claims in the team-alpha repo, requested via the portal |
+| `monitoring` | – | kube-prometheus-stack; grafana's sidecar auto-loads dashboard configmaps |
+| `monitoring-rules` | – | alert rules for golden-path services |
+| `metrics-server` | – | kind doesn't ship one, and backstage's kubernetes tab wants it |
+| `cluster-rbac` | – | the read-only service account backstage uses |
+| `services` (ApplicationSet) | – | deploys any org repo that has a `k8s/` folder |
+
+- ArgoCD: **https**://localhost:8081 (self-signed cert, click through)
+  `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d`
+- Grafana: http://localhost:3001 (`admin` / `demo`)
+
+## what lives where
+
+```
+apps/         one ArgoCD Application per thing above
+bootstrap/    kind cluster definition (3 nodes, port mappings for argocd + grafana)
+cluster/      service accounts / rbac the platform needs
+crossplane/   the Provider and Function CRs
+scripts/      bootstrap + teardown
+monitoring/   helm values + alert rules
+```
+
+Requested infrastructure does **not** live here. It lives in the team's own
+repo — [team-alpha](https://github.com/efekaya-devex-platform/team-alpha) — and
+this repo just points an ArgoCD Application at it (`apps/infra-team-alpha.yaml`).
+The platform owns the cluster; a product team owns the things it asked for, and
+can review and merge its own infrastructure without commit access here. 
+
+The split inside a team repo still matters: Crossplane claims in `claims/` are
+continuously reconciled by ArgoCD, the Terraform in `infra/` is validated by CI
+but nothing applies it. 
+
+## secrets you need in the cluster
+
+Not created by the bootstrap script, because it's yours:
+
+```bash
+# so the ApplicationSet can list repos in the org
+kubectl -n argocd create secret generic github-token --from-literal=token=$GITHUB_TOKEN
+```
+
+This repo and the team repos are public, so ArgoCD reads them anonymously and
+needs no repository credential. If you fork any of them private, add one:
+
+```bash
+kubectl -n argocd create secret generic idp-gitops-repo \
+  --from-literal=type=git \
+  --from-literal=url=https://github.com/<you>/idp-gitops \
+  --from-literal=username=<you> --from-literal=password=$GITHUB_TOKEN
+kubectl -n argocd label secret idp-gitops-repo argocd.argoproj.io/secret-type=repository
+```
+
+The portal also needs a token for the cluster - mint one from the service
+account `cluster-rbac` creates and put it in `backstage-idp/.env`:
+
+```bash
+kubectl create token backstage-viewer -n default --duration=87600h
+```
+

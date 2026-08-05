@@ -1,0 +1,41 @@
+# alert rules for anything the golden path deployed.
+# release: monitoring is what makes prometheus actually load these - same
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: idp-services
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: idp-services
+      rules:
+        - alert: ServiceDown
+          # every golden-path service gets scraped, so this covers all of them
+          # without naming any of them
+          expr: up{namespace="default"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "{{ $labels.job }} is not responding"
+            description: "prometheus hasn't been able to scrape {{ $labels.job }} for a minute. pod is probably crashed, evicted, or never started."
+
+        - alert: ServiceRestartLoop
+          expr: increase(kube_pod_container_status_restarts_total{namespace="default"}[10m]) > 2
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ $labels.pod }} keeps restarting"
+            description: "{{ $labels.pod }} has restarted more than twice in 10 minutes - usually a crashloop or a failing probe."
+
+        - alert: ServiceNoTraffic
+          expr: sum by (job) (rate(app_requests_total{namespace="default"}[10m])) == 0
+          for: 15m
+          labels:
+            severity: info
+          annotations:
+            summary: "{{ $labels.job }} has served no requests in 15 minutes"
+            description: "fine for a demo service nobody is hitting, would be worth a look in production."

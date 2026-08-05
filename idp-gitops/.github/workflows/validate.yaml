@@ -1,0 +1,15 @@
+name: validate
+on: [push, pull_request]
+jobs:
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: kubeconform (schema-validate all manifests)
+        uses: docker://ghcr.io/yannh/kubeconform:v0.6.7
+        with:
+          args: >-
+            -ignore-missing-schemas -strict -summary
+            -ignore-filename-pattern values.yaml
+            apps/ bootstrap/ monitoring/ crossplane/
+

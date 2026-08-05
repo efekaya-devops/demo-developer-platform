@@ -1,0 +1,33 @@
+# any repo in the org with a k8s/ folder gets picked up and synced automatically 
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: services
+  namespace: argocd
+spec:
+  generators:
+    - scmProvider:
+        # https so argocd uses the token secret, not ssh keys
+        cloneProtocol: https
+        requeueAfterSeconds: 60
+        github:
+          organization: efekaya-devex-platform
+          tokenRef: { secretName: github-token, key: token }
+        filters:
+          - pathsExist: [k8s]
+  template:
+    metadata:
+      name: '{{ repository }}'
+    spec:
+      project: default
+      source:
+        repoURL: '{{ url }}'
+        targetRevision: '{{ branch }}'
+        path: k8s
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
