@@ -1,7 +1,7 @@
 # demo-developer-platform
 
 The code behind the [demo.efekaya.io](https://demo.efekaya.io) walkthrough — a full
-Internal Developer Platform, split across four repos and combined here (with
+Internal Developer Platform, split across five repos and combined here (with
 their original commit history intact) so it's browsable in one place.
 
 - **[backstage-idp](backstage-idp/)** — the portal side of the platform. Two golden
@@ -18,6 +18,11 @@ their original commit history intact) so it's browsable in one place.
 - **[terraform-modules](terraform-modules/)** — infra modules for the demo. Local
   (free) and cloud versions of the same thing, so swapping `source =` is
   basically the whole migration.
+- **[team-alpha](team-alpha/)** — a product team's own infrastructure repo, kept
+  separate from idp-gitops on purpose: the platform team owns the cluster,
+  ArgoCD, monitoring and the blueprints; a product team owns what it
+  requested, and can review/merge its own infra without commit access to the
+  platform.
 
 Each folder keeps its own README and its own git history (merged in via
 `git subtree`, not squashed) — start there for the details on running any one
