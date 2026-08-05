@@ -1,0 +1,19 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: demo-cluster
+  description: >-
+    AWS EKS cluster, requested through the portal. Terraform is CI-validated
+    only - nothing applies it, so this is a request on record, not a running
+    cluster.
+  tags:
+    - aws
+    - terraform
+    - kubernetes
+  links:
+    - title: The terraform in git
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/infra/aws/demo-cluster.tf
+spec:
+  type: aws-eks-cluster
+  owner: team-alpha
+  system: platform-infra

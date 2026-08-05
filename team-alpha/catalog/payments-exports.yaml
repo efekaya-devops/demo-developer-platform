@@ -1,0 +1,18 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: payments-exports
+  description: >-
+    S3 bucket for payments exports. Terraform is CI-validated only - nothing
+    applies it, so this is a request on record, not a live bucket.
+  tags:
+    - aws
+    - terraform
+    - storage
+  links:
+    - title: The terraform in git
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/infra/aws/payments-exports.tf
+spec:
+  type: aws-s3-bucket
+  owner: team-alpha
+  system: platform-infra

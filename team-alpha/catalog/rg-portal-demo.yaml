@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: rg-portal-demo
+  description: Azure resource group, requested through the portal
+  tags:
+    - azure
+    - crossplane
+  links:
+    - title: The claim in git
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/claims/rg-portal-demo.yaml
+spec:
+  type: azure-resource-group
+  owner: team-alpha
+  system: platform-infra

@@ -1,0 +1,9 @@
+apiVersion: platform.example.org/v1alpha1
+kind: ResourceGroup
+metadata:
+  name: rg-demo-test
+spec:
+  resourceGroupName: rg-demo-test
+  location: westeurope
+  environment: dev
+  team: team-alpha

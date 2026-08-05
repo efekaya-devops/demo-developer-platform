@@ -1,0 +1,57 @@
+name: validate
+on: [push, pull_request]
+jobs:
+  # the portal opens PRs against this repo, so this is the check a reviewer
+  # actually looks at before merging someone's infrastructure request
+  claims:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: kubeconform (schema-validate the claims)
+        uses: docker://ghcr.io/yannh/kubeconform:v0.6.7
+        with:
+          # the crossplane CRDs aren't in the schema store, hence
+          # -ignore-missing-schemas: this catches malformed yaml and obvious
+          # shape errors, not whether the XRD would accept the spec
+          args: -ignore-missing-schemas -strict -summary claims/
+
+  catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: parse the catalog entities
+        run: |
+          python3 -c "
+          import glob, sys, yaml
+          bad = 0
+          for f in glob.glob('catalog/*.yaml'):
+              try:
+                  d = yaml.safe_load(open(f))
+              except Exception as e:
+                  print(f'{f}: {e}'); bad += 1; continue
+              for key in ('apiVersion', 'kind', 'metadata', 'spec'):
+                  if key not in d:
+                      print(f'{f}: missing {key}'); bad += 1
+              if d.get('spec', {}).get('owner') in (None, ''):
+                  print(f'{f}: no owner - it would land in the catalog unowned'); bad += 1
+          sys.exit(1 if bad else 0)
+          "
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - name: fmt
+        run: |
+          terraform -chdir=infra/aws fmt -check -recursive
+          terraform -chdir=infra/gcp fmt -check -recursive
+      - name: validate
+        # -backend=false so it doesn't need credentials or remote state
+        run: |
+          terraform -chdir=infra/aws init -backend=false -input=false
+          terraform -chdir=infra/aws validate
+          terraform -chdir=infra/gcp init -backend=false -input=false
+          terraform -chdir=infra/gcp validate

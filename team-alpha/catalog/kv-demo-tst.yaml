@@ -1,0 +1,18 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: kv-demo-tst
+  description: Azure key vault, requested through the portal
+  tags:
+    - azure
+    - crossplane
+    - secrets
+  links:
+    - title: The claim in git
+      url: https://github.com/efekaya-devex-platform/team-alpha/blob/main/claims/kv-demo-tst.yaml
+spec:
+  type: azure-key-vault
+  owner: team-alpha
+  system: platform-infra
+  dependsOn:
+    - resource:default/rg-demo-test
