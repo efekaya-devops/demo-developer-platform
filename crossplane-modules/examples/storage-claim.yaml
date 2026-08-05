@@ -1,0 +1,8 @@
+apiVersion: platform.example.org/v1alpha1
+kind: StorageAccount
+metadata:
+  name: demo-storage
+spec:
+  storageAccountName: demostorage01
+  resourceGroup: rg-demo
+  team: team-alpha

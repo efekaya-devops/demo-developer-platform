@@ -1,0 +1,46 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: resourcegroups.platform.example.org
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.org/v1alpha1
+    kind: ResourceGroup
+  mode: Pipeline
+  pipeline:
+    - step: create
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: resource-group
+            base:
+              apiVersion: azure.upbound.io/v1beta1
+              kind: ResourceGroup
+              spec:
+                forProvider:
+                  location: westeurope
+                  tags:
+                    ManagedBy: crossplane
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: spec.resourceGroupName
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.resourceGroupName
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+              - fromFieldPath: spec.location
+                toFieldPath: spec.forProvider.location
+              - fromFieldPath: spec.team
+                toFieldPath: spec.forProvider.tags.Team
+              - fromFieldPath: spec.environment
+                toFieldPath: spec.forProvider.tags.Environment
+            readinessChecks:
+              - type: NonEmpty
+                fieldPath: status.atProvider.id
+            connectionDetails:
+              - type: FromFieldPath
+                name: resourceGroupId
+                fromFieldPath: status.atProvider.id

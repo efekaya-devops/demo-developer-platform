@@ -1,0 +1,54 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: webappplatforms.platform.example.org
+spec:
+  group: platform.example.org
+  scope: Cluster
+  names:
+    kind: WebAppPlatform
+    plural: webappplatforms
+
+  defaultCompositionRef:
+    name: webappplatforms.platform.example.org
+
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - platformName
+                - resourceGroup
+                - team
+              properties:
+                platformName:
+                  type: string
+                  description: base name, everything else gets derived from it
+                  pattern: "^[a-z0-9]{3,18}$"
+                resourceGroup:
+                  type: string
+                location:
+                  type: string
+                  default: westeurope
+                containerImage:
+                  type: string
+                  default: "nginxdemos/hello:latest"
+                planSku:
+                  type: string
+                  enum: [B1, B2, S1, P1v3]
+                  default: B1
+                team:
+                  type: string
+            status:
+              type: object
+              properties:
+                webAppUrl:
+                  type: string
+                appInsightsConnectionString:
+                  type: string

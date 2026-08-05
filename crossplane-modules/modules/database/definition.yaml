@@ -1,0 +1,50 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: databases.platform.example.org
+spec:
+  group: platform.example.org
+  scope: Cluster
+  names:
+    kind: Database
+    plural: databases
+
+  defaultCompositionRef:
+    name: databases.platform.example.org
+
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - serverName
+                - resourceGroup
+                - team
+              properties:
+                serverName:
+                  type: string
+                  pattern: "^[a-z0-9-]{3,40}$"
+                resourceGroup:
+                  type: string
+                location:
+                  type: string
+                  default: westeurope
+                skuName:
+                  type: string
+                  default: B_Standard_B1ms
+                allowPublicAccess:
+                  type: boolean
+                  default: false
+                team:
+                  type: string
+            status:
+              type: object
+              properties:
+                fqdn:
+                  type: string

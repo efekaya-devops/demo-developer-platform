@@ -1,0 +1,109 @@
+# four resources wired together (plan -> web app, insights -> web app). 
+# this is basically what a real platform team's module looks like
+
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: webappplatforms.platform.example.org
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.org/v1alpha1
+    kind: WebAppPlatform
+  mode: Pipeline
+  pipeline:
+    - step: create
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: service-plan
+            base:
+              apiVersion: web.azure.upbound.io/v1beta1
+              kind: ServicePlan
+              spec:
+                forProvider:
+                  location: westeurope
+                  osType: Linux
+                  skuName: B1
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "plan-%s" }
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "plan-%s" }
+              - fromFieldPath: spec.resourceGroup
+                toFieldPath: spec.forProvider.resourceGroupName
+              - fromFieldPath: spec.planSku
+                toFieldPath: spec.forProvider.skuName
+
+          - name: app-insights
+            base:
+              apiVersion: insights.azure.upbound.io/v1beta1
+              kind: ApplicationInsights
+              spec:
+                forProvider:
+                  location: westeurope
+                  applicationType: web
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "ai-%s" }
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "ai-%s" }
+              - fromFieldPath: spec.resourceGroup
+                toFieldPath: spec.forProvider.resourceGroupName
+            connectionDetails:
+              - type: FromFieldPath
+                name: appInsightsConnectionString
+                fromFieldPath: status.atProvider.connectionString
+
+          - name: web-app
+            base:
+              apiVersion: web.azure.upbound.io/v1beta1
+              kind: LinuxWebApp
+              spec:
+                forProvider:
+                  location: westeurope
+                  servicePlanIdSelector:
+                    matchControllerRef: true
+                  siteConfig:
+                    - applicationStack:
+                        - dockerImageName: "nginxdemos/hello:latest"
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "app-%s" }
+              # NOTE: no external-name pin here - LinuxWebApp wants the full
+              # arm resource id as external-name, not a bare name. pinning a
+              # bare name breaks every observe after create. ask me how I know
+              - fromFieldPath: spec.resourceGroup
+                toFieldPath: spec.forProvider.resourceGroupName
+              - fromFieldPath: spec.containerImage
+                toFieldPath: spec.forProvider.siteConfig[0].applicationStack[0].dockerImageName
+              - type: FromCompositeFieldPath
+                fromFieldPath: appInsightsConnectionString
+                toFieldPath: spec.forProvider.appSettings.APPLICATIONINSIGHTS_CONNECTION_STRING
+            connectionDetails:
+              - type: FromFieldPath
+                name: webAppUrl
+                fromFieldPath: status.atProvider.defaultHostname

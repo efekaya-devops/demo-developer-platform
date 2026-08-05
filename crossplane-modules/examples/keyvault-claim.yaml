@@ -1,0 +1,9 @@
+apiVersion: platform.example.org/v1alpha1
+kind: KeyVault
+metadata:
+  name: demo-kv
+spec:
+  vaultName: demo-kv-01
+  resourceGroup: rg-demo
+  tenantId: "00000000-0000-0000-0000-000000000000"
+  team: team-alpha

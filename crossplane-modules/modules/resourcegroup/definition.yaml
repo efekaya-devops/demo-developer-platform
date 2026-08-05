@@ -1,0 +1,49 @@
+# simplest possible blueprint - one claim field maps to one azure resource.
+# good starting point if you've never written an xrd before
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: resourcegroups.platform.example.org
+spec:
+  group: platform.example.org
+  scope: Cluster
+  names:
+    kind: ResourceGroup
+    plural: resourcegroups
+
+  defaultCompositionRef:
+    name: resourcegroups.platform.example.org
+
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - resourceGroupName
+                - location
+                - team
+              properties:
+                resourceGroupName:
+                  type: string
+                  description: name of the azure resource group to create
+                location:
+                  type: string
+                  default: westeurope
+                team:
+                  type: string
+                  description: owning team, gets applied as a tag
+                environment:
+                  type: string
+                  enum: [dev, test, acc, prod]
+                  default: dev
+            status:
+              type: object
+              properties:
+                resourceGroupId:
+                  type: string

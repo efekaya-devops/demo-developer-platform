@@ -1,0 +1,57 @@
+kind: Composition
+metadata:
+  name: storageaccounts.platform.example.org
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.org/v1alpha1
+    kind: StorageAccount
+  mode: Pipeline
+  pipeline:
+    - step: create
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: storage-account
+            base:
+              apiVersion: storage.azure.upbound.io/v1beta1
+              kind: Account
+              spec:
+                forProvider:
+                  location: westeurope
+                  accountTier: Standard
+                  accountReplicationType: LRS
+                  accountKind: StorageV2
+                  minTlsVersion: "TLS1_2"
+                  publicNetworkAccessEnabled: false
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "sa%s" }
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "sa%s" }
+              - fromFieldPath: spec.resourceGroup
+                toFieldPath: spec.forProvider.resourceGroupName
+              - fromFieldPath: spec.location
+                toFieldPath: spec.forProvider.location
+              - fromFieldPath: spec.accountTier
+                toFieldPath: spec.forProvider.accountTier
+              - fromFieldPath: spec.replicationType
+                toFieldPath: spec.forProvider.accountReplicationType
+              - fromFieldPath: spec.team
+                toFieldPath: spec.forProvider.tags.Team
+              - fromFieldPath: spec.environment
+                toFieldPath: spec.forProvider.tags.Environment
+            connectionDetails:
+              - type: FromFieldPath
+                name: primaryBlobEndpoint
+                fromFieldPath: status.atProvider.primaryBlobEndpoint

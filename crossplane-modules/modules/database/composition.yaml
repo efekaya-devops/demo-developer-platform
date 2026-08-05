@@ -1,0 +1,79 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: databases.platform.example.org
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.org/v1alpha1
+    kind: Database
+  mode: Pipeline
+  pipeline:
+    - step: server
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: postgres
+            base:
+              apiVersion: dbforpostgresql.azure.upbound.io/v1beta1
+              kind: FlexibleServer
+              spec:
+                forProvider:
+                  location: westeurope
+                  version: "16"
+                  administratorLogin: pgadmin
+                  administratorPasswordSecretRef:
+                    namespace: crossplane-system
+                    key: password
+                    name: shared-db-password
+                  storageMb: 32768
+                  publicNetworkAccessEnabled: false
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: spec.serverName
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.serverName
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+              - fromFieldPath: spec.resourceGroup
+                toFieldPath: spec.forProvider.resourceGroupName
+              - fromFieldPath: spec.skuName
+                toFieldPath: spec.forProvider.skuName
+              - fromFieldPath: spec.allowPublicAccess
+                toFieldPath: spec.forProvider.publicNetworkAccessEnabled
+            connectionDetails:
+              - type: FromFieldPath
+                name: fqdn
+                fromFieldPath: status.atProvider.fqdn
+
+    - step: firewall-if-public
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            {{- $xr := .observed.composite.resource }}
+            {{- if $xr.spec.allowPublicAccess }}
+            apiVersion: dbforpostgresql.azure.upbound.io/v1beta1
+            kind: FlexibleServerFirewallRule
+            metadata:
+              name: fw-{{ $xr.metadata.name }}
+              annotations:
+                gotemplating.fn.crossplane.io/composition-resource-name: firewall
+                crossplane.io/external-name: fw-{{ $xr.metadata.name }}
+            spec:
+              forProvider:
+                startIpAddress: "0.0.0.0"
+                endIpAddress: "0.0.0.0"
+                serverIdSelector:
+                  matchControllerRef: true
+              providerConfigRef:
+                name: default
+            {{- end }}
+            {{/* nothing rendered when allowPublicAccess is false - the
+                 resource just doesn't exist, no cleanup step needed */}}

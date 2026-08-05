@@ -1,0 +1,49 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: keyvaults.platform.example.org
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.org/v1alpha1
+    kind: KeyVault
+  mode: Pipeline
+  pipeline:
+    - step: create
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: key-vault
+            base:
+              apiVersion: keyvault.azure.upbound.io/v1beta1
+              kind: Vault
+              spec:
+                forProvider:
+                  location: westeurope
+                  skuName: standard
+                  purgeProtectionEnabled: true
+                  softDeleteRetentionDays: 7
+                  enableRbacAuthorization: true
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: spec.vaultName
+                toFieldPath: metadata.name
+              - fromFieldPath: spec.vaultName
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+              - fromFieldPath: spec.resourceGroup
+                toFieldPath: spec.forProvider.resourceGroupName
+              - fromFieldPath: spec.location
+                toFieldPath: spec.forProvider.location
+              - fromFieldPath: spec.tenantId
+                toFieldPath: spec.forProvider.tenantId
+              - fromFieldPath: spec.skuName
+                toFieldPath: spec.forProvider.skuName
+              - fromFieldPath: spec.team
+                toFieldPath: spec.forProvider.tags.Team
+            connectionDetails:
+              - type: FromFieldPath
+                name: vaultUri
+                fromFieldPath: status.atProvider.vaultUri

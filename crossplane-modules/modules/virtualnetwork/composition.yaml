@@ -1,0 +1,125 @@
+# shows composing more than one resource off a single claim - vnet, subnet,
+# nsg, and wiring the nsg to the subnet. this is the pattern most of the
+# "real" modules in this style of platform end up using
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: virtualnetworks.platform.example.org
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.org/v1alpha1
+    kind: VirtualNetwork
+  mode: Pipeline
+  pipeline:
+    - step: create
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: vnet
+            base:
+              apiVersion: network.azure.upbound.io/v1beta1
+              kind: VirtualNetwork
+              spec:
+                forProvider:
+                  location: westeurope
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "vnet-%s" }
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "vnet-%s" }
+              - fromFieldPath: spec.resourceGroup
+                toFieldPath: spec.forProvider.resourceGroupName
+              - fromFieldPath: spec.addressSpace
+                toFieldPath: spec.forProvider.addressSpace[0]
+            connectionDetails:
+              - type: FromFieldPath
+                name: vnetId
+                fromFieldPath: status.atProvider.id
+
+          - name: nsg
+            base:
+              apiVersion: network.azure.upbound.io/v1beta1
+              kind: SecurityGroup
+              spec:
+                forProvider:
+                  location: westeurope
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "nsg-%s" }
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "nsg-%s" }
+              - fromFieldPath: spec.resourceGroup
+                toFieldPath: spec.forProvider.resourceGroupName
+
+          - name: subnet
+            base:
+              apiVersion: network.azure.upbound.io/v1beta1
+              kind: Subnet
+              spec:
+                forProvider:
+                  # matchControllerRef finds the vnet above on its own -
+                  # no need to hardcode or patch a name in
+                  virtualNetworkNameSelector:
+                    matchControllerRef: true
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "subnet-%s" }
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "subnet-%s" }
+              - fromFieldPath: spec.resourceGroup
+                toFieldPath: spec.forProvider.resourceGroupName
+              - fromFieldPath: spec.subnetPrefix
+                toFieldPath: spec.forProvider.addressPrefixes[0]
+            connectionDetails:
+              - type: FromFieldPath
+                name: subnetId
+                fromFieldPath: status.atProvider.id
+
+          - name: nsg-association
+            base:
+              apiVersion: network.azure.upbound.io/v1beta1
+              kind: SubnetNetworkSecurityGroupAssociation
+              spec:
+                forProvider:
+                  subnetIdSelector:
+                    matchControllerRef: true
+                  networkSecurityGroupIdSelector:
+                    matchControllerRef: true
+                providerConfigRef:
+                  name: default
+            patches:
+              - fromFieldPath: metadata.name
+                toFieldPath: metadata.name
+                transforms:
+                  - type: string
+                    string: { type: Format, fmt: "nsgassoc-%s" }
+              # NOTE: no external-name pin here on purpose - this resource's
+              # external-name is the subnet's full resource id, not a plain
+              # name. pinning a fake name here breaks it, found that out too

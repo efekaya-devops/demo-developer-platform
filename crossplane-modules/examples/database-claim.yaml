@@ -1,0 +1,8 @@
+apiVersion: platform.example.org/v1alpha1
+kind: Database
+metadata:
+  name: demo-db
+spec:
+  serverName: demo-pg-01
+  resourceGroup: rg-demo
+  team: team-alpha

@@ -1,0 +1,52 @@
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: virtualnetworks.platform.example.org
+spec:
+  group: platform.example.org
+  scope: Cluster
+  names:
+    kind: VirtualNetwork
+    plural: virtualnetworks
+
+  defaultCompositionRef:
+    name: virtualnetworks.platform.example.org
+
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - vnetName
+                - resourceGroup
+                - team
+              properties:
+                vnetName:
+                  type: string
+                  pattern: "^[a-z0-9-]{2,40}$"
+                resourceGroup:
+                  type: string
+                location:
+                  type: string
+                  default: westeurope
+                addressSpace:
+                  type: string
+                  default: "10.0.0.0/16"
+                subnetPrefix:
+                  type: string
+                  default: "10.0.1.0/24"
+                team:
+                  type: string
+            status:
+              type: object
+              properties:
+                vnetId:
+                  type: string
+                subnetId:
+                  type: string
