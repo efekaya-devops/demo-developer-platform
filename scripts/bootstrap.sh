@@ -44,7 +44,19 @@ else
   echo "  (skipped - set GITHUB_TOKEN to enable private ghcr pulls)"
 fi
 
-echo "=== 4/4 app-of-apps ==="
+if [ "${LEAN:-}" = "1" ]; then
+  echo "=== 4/5 prometheus-operator CRDs ==="
+  # the lean profile skips the monitoring stack, but the golden path ships a
+  # ServiceMonitor with every service - without the CRD those Applications
+  # fail to sync entirely, taking the Deployment down with them. the CRDs on
+  # their own are just API definitions: nothing runs, nothing scrapes.
+  CRD_BASE="https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd"
+  for c in servicemonitors podmonitors prometheusrules; do
+    kubectl apply --server-side -f "$CRD_BASE/monitoring.coreos.com_${c}.yaml" >/dev/null
+  done
+fi
+
+echo "=== app-of-apps ==="
 kubectl apply -f "$ROOT_APP"
 
 echo "=== done ==="
