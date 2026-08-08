@@ -3,6 +3,12 @@ app:
   baseUrl: http://localhost:3000
   extensions:
     - page:scaffolder: false
+    # The kubernetes plugin ships a standalone page alongside its entity tab,
+    # and the sidebar picks it up automatically. That page renders the entity
+    # view with no entity around it, so visiting it only ever produces
+    # "entity context is not available". The tab on service pages is a separate
+    # extension and stays.
+    - page:kubernetes: false
 
 organization:
   name: Platform Team

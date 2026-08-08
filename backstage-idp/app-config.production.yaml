@@ -1,0 +1,101 @@
+# Config for a hosted deployment, layered over app-config.yaml.
+#
+# PUBLIC_URL is substituted at build time as well as at runtime: the frontend
+# bundle bakes app.baseUrl in when it's built, so deploy/install.sh exports it
+# before building rather than only before starting the service.
+#
+# No secrets here on purpose - this repo is public. Tokens live in .env, which
+# install.sh generates on the host and .gitignore keeps out.
+
+app:
+  baseUrl: ${PUBLIC_URL}
+
+backend:
+  baseUrl: ${PUBLIC_URL}
+  listen:
+    port: 7007
+    # nginx terminates TLS and proxies to this; nothing reaches node directly
+    host: 127.0.0.1
+  cors:
+    origin: ${PUBLIC_URL}
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+  database:
+    client: better-sqlite3
+    connection:
+      # outside the checkout, so rebuilding the app doesn't wipe the catalog
+      directory: /home/ubuntu/backstage-data
+
+auth:
+  environment: development
+  providers:
+    guest:
+      # The guest provider refuses to start unless NODE_ENV is development, and
+      # under systemd it isn't. Without this, sign-in fails, the frontend falls
+      # back to a legacy guest token the backend rejects, and every API call
+      # returns 401 - the catalog and scaffolder pages come up empty.
+      #
+      # Acceptable here and nowhere else: this is a public read-only demo with
+      # no real accounts to impersonate, and deploy/nginx.conf refuses any
+      # request to the scaffolder that would mutate something.
+      dangerouslyAllowOutsideDevelopment: true
+
+catalog:
+  # Overrides the file:// locations in app-config.yaml. Those use paths
+  # relative to the working directory, which only line up when you run from
+  # packages/backend the way `yarn start` does - a deployed backend resolves
+  # them somewhere else entirely and silently registers nothing, so Create
+  # comes up with no templates and no error to explain why.
+  #
+  # Reading them over https makes the location independent of where the
+  # process runs, and means a template edit reaches the portal on the next
+  # refresh instead of needing a redeploy.
+  locations:
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/create-service/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/create-react-app/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-resource-group/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-database/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-keyvault/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-virtualnetwork/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-webappplatform/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-bucket/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-eks-cluster/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-gcs-bucket/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/templates/request-gke-cluster/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/efekaya-devops/backstage-idp/blob/main/examples/org.yaml
+      rules:
+        - allow: [User, Group, System]
