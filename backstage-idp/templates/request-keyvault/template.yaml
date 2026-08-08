@@ -4,10 +4,10 @@ metadata:
   name: request-keyvault
   title: Request a Key Vault (Crossplane)
   description: >-
-    Ask the platform for an Azure Key Vault for secrets management. You get a pull
-    request against the GitOps repo containing a Crossplane claim — merge it and
-    ArgoCD applies it, Crossplane provisions the actual Azure Key Vault. Portal
-    never needs direct cloud access.
+    Provision an Azure Key Vault for secrets management. Merge the PR to be
+    added to the shared azure-keyvault module — CI validates the Crossplane
+    claim, a peer reviews it, and merging is what provisions the actual Azure
+    Key Vault. Portal never needs direct cloud access.
   tags:
     - infrastructure
     - crossplane

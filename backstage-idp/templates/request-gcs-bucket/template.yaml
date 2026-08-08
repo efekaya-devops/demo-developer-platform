@@ -4,10 +4,9 @@ metadata:
   name: request-gcs-bucket
   title: Request a GCS Bucket (Terraform)
   description: >-
-    Ask the platform for a Google Cloud Storage bucket. You get a pull request
-    adding a call to the shared gcp-gcs module — CI validates the Terraform, a
-    human reviews, and merging is what provisions the bucket. Same request-as-a-PR
-    flow, but for GCP instead of AWS.
+    Provision a Google Cloud Storage bucket. Merge the PR to be
+    added to the shared gcp-gcs module — CI validates the Terraform, a
+    peer reviews it, and merging is what provisions the cluster.
   tags:
     - infrastructure
     - terraform

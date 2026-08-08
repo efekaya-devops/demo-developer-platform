@@ -4,10 +4,9 @@ metadata:
   name: create-react-app
   title: Create a React App (golden path)
   description: >-
-    The same paved road as the service template, for a frontend: a Vite + React
-    app built to static files and served by nginx, CI that pushes to GHCR,
-    Kubernetes manifests ArgoCD picks up on its own, and — the part that
-    usually gets skipped for frontends — real metrics, a Grafana dashboard and
+    Service template, for a frontend: a Vite + React
+    app built to static files and served by nginx. CI that pushes to GHCR,
+    Kubernetes manifests ArgoCD picks up on its own. Plus a Grafana dashboard with
     the same alerts every backend service gets.
   tags:
     - golden-path

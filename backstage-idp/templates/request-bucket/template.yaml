@@ -4,10 +4,8 @@ metadata:
   name: request-bucket
   title: Request an S3 Bucket (Terraform)
   description: >-
-    Ask the platform for an S3 bucket. You get a pull request adding a call to
-    the shared aws-s3 module — CI checks the Terraform is valid, a human reviews
-    the diff, and merging is what makes it real. Same request-as-a-PR flow as the
-    Crossplane path, just a different engine underneath.
+    Provision an S3 bucket. A PR addded to the infra repo will be created, using
+    the shared aws-s3 module. CI checks the Terraform is valid. PR is peer-reviewed and merged. 
   tags:
     - infrastructure
     - terraform

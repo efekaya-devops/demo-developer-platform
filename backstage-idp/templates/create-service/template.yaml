@@ -4,7 +4,7 @@ metadata:
   name: create-service
   title: Create a Service (golden path)
   description: >-
-    One click to a production-shaped service: a new GitHub repo with a
+    End-to-End production-shaped service: a new GitHub repo with a
     containerized Node.js app, CI that builds and pushes the image to GHCR,
     Kubernetes manifests that ArgoCD picks up automatically, a ServiceMonitor
     and a Grafana dashboard that appears the moment the service is live —

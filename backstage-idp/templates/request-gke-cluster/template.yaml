@@ -4,10 +4,9 @@ metadata:
   name: request-gke-cluster
   title: Request a GCP GKE Cluster (Terraform)
   description: >-
-    Ask the platform for a Google Kubernetes Engine cluster. You get a pull
-    request adding a call to the shared gcp-gke module — CI validates the
-    Terraform, a human reviews, and merging is what provisions the cluster.
-    Zonal (not regional) to keep the cost story honest.
+    Provision a Google Kubernetes Engine cluster. Merge the PR to be
+    added to the shared gcp-gke module — CI validates the
+    Terraform, a peer reviews it, and merging is what provisions the cluster.
   tags:
     - infrastructure
     - terraform

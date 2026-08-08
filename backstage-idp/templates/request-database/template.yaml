@@ -4,10 +4,9 @@ metadata:
   name: request-database
   title: Request a Database (Crossplane)
   description: >-
-    Ask the platform for a PostgreSQL database on Azure. You get a pull request
-    against the GitOps repo containing a Crossplane claim — merge it and ArgoCD
-    applies it, Crossplane provisions the actual Azure managed database. No portal
-    access to the cloud, no ticket, request is reviewable in Git.
+    Provision a PostgreSQL database on Azure. You get a PR
+    against the GitOps repo containing a Crossplane claim — review & merge it.
+    ArgoCD applies it, Crossplane provisions the actual Azure managed database. 
   tags:
     - infrastructure
     - crossplane

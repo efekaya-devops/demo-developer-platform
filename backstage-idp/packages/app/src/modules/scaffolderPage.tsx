@@ -50,12 +50,8 @@ const ReadOnlyNotice = () => {
           Read-only demo — submitting will return 403, and that is expected
         </Typography>
         <Typography variant="body2" color="textSecondary">
-          Browse the templates and step through the whole flow: every field,
-          validation and the review screen behave exactly as they do in a real
-          install. The final Create call is blocked at the proxy, because
-          running it would create a public repository in this GitHub
-          organisation and deploy a workload onto the single machine hosting
-          this demo. Nothing you do here can change anything.
+          The hosted demo is read-only: so pressing Create returns 403. 
+          That's deliberate - the walkthrough recordings show the path actually completing.
         </Typography>
       </div>
     </Paper>

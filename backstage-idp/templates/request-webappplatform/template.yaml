@@ -4,10 +4,10 @@ metadata:
   name: request-webappplatform
   title: Request a Web App Platform (Crossplane)
   description: >-
-    Ask the platform for an Azure App Service environment ready to run web apps.
-    You get a pull request against the GitOps repo containing a Crossplane claim —
-    merge it and ArgoCD applies it, Crossplane provisions the platform. Portal
-    never needs cloud credentials.
+    Provision an Azure App Service environment ready to run web apps.
+    Merge the PR to be added to the shared azure-webapp platform module — 
+    CI validates the Crossplane claim, a peer reviews it, and merging is what provisions the actual Azure
+    Web App Platform. Portal never needs cloud credentials.
   tags:
     - infrastructure
     - crossplane

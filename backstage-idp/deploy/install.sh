@@ -141,11 +141,30 @@ fi
 
 echo
 echo "### waiting for the portal"
+up=0
+for _ in $(seq 1 30); do
+  if [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:7007/)" = "200" ]; then
+    up=1; break
+  fi
+  sleep 5
+done
+if [ "$up" = 0 ]; then
+  echo "not answering yet - check: journalctl -u backstage -n 50" >&2
+  exit 1
+fi
+
+# Generate the docs, then bounce the service so the search indexer's first pass
+# has something to collate. Skipping the restart leaves the TechDocs tab
+# returning 500 until the indexer's next scheduled run ten minutes later.
+echo "### building techdocs"
+"$REPO_DIR/deploy/warm-techdocs.sh"
+sudo systemctl restart backstage
+
 for _ in $(seq 1 30); do
   if [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:7007/)" = "200" ]; then
     echo "up: $PUBLIC_URL"; exit 0
   fi
   sleep 5
 done
-echo "not answering yet - check: journalctl -u backstage -n 50" >&2
+echo "came up, then did not answer after the techdocs restart - check: journalctl -u backstage -n 50" >&2
 exit 1

@@ -47,6 +47,14 @@ techdocs:
     runIn: docker
   publisher:
     type: local
+    local:
+      # Without this the built docs land in
+      # node_modules/@backstage/plugin-techdocs-backend/static/docs, so every
+      # yarn install throws them away. That matters more than it sounds: the
+      # search indexer runs on startup, finds zero techdocs documents, and Lunr
+      # then never creates the techdocs index at all - after which every query
+      # the TechDocs tab fires comes back 500 MissingIndexError.
+      publishDirectory: .data/techdocs
 
 catalog:
   import:

@@ -29,6 +29,16 @@ backend:
       # outside the checkout, so rebuilding the app doesn't wipe the catalog
       directory: /home/ubuntu/backstage-data
 
+techdocs:
+  publisher:
+    type: local
+    local:
+      # Same reasoning as app-config.yaml, but the relative path there is no
+      # good here: the service runs out of ~/backstage-run, which install.sh
+      # deletes and recreates on every deploy. Parked next to the sqlite file
+      # so generated docs outlive a redeploy.
+      publishDirectory: /home/ubuntu/backstage-data/techdocs
+
 auth:
   environment: development
   providers:

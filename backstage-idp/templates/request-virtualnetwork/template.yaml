@@ -4,10 +4,11 @@ metadata:
   name: request-virtualnetwork
   title: Request a Virtual Network (Crossplane)
   description: >-
-    Ask the platform for an Azure Virtual Network. You get a pull request against
-    the GitOps repo containing a Crossplane claim — merge it and ArgoCD applies
-    it, Crossplane provisions the actual Azure VNet. Foundation for most Azure
-    infrastructure.
+    Foundation for most Azure infrastructure. 
+    Provision an Azure Virtual Network. Merge the PR to be
+    added to the shared azure-virtualnetwork module — CI validates the Crossplane
+    claim, a peer reviews it, and merging is what provisions the actual Azure
+    Virtual Network. 
   tags:
     - infrastructure
     - crossplane

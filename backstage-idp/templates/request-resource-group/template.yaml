@@ -4,10 +4,10 @@ metadata:
   name: request-resource-group
   title: Request an Azure Resource Group (Crossplane)
   description: >-
-    Ask the platform for an Azure Resource Group. You get a pull request against
-    the GitOps repo containing a Crossplane claim — merge it and ArgoCD applies
-    it, Crossplane composes the underlying Azure resource. No portal access to
-    the cloud, no ticket, and the request itself is reviewable in Git.
+    Provision an Azure Resource Group. Merge the PR to be
+    added to the shared azure-resource-group module — CI validates the Crossplane
+    claim, a peer reviews it, and merging is what provisions the actual Azure
+    Resource Group. No portal access to the cloud and the request itself is reviewable in Git.
   tags:
     - infrastructure
     - crossplane

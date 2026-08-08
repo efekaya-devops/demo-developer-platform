@@ -4,10 +4,9 @@ metadata:
   name: request-eks-cluster
   title: Request an AWS EKS Cluster (Terraform)
   description: >-
-    Ask the platform for an Amazon EKS Kubernetes cluster. You get a pull request
-    adding a call to the shared aws-eks module — CI validates the Terraform, a
-    human reviews, and merging is what provisions the cluster. Same request-as-a-PR
-    flow as the Crossplane path, but using Terraform instead.
+    Provision an Amazon EKS Kubernetes cluster. Merge the PR to be
+    added to the shared aws-eks module — CI validates the Terraform, a
+    peer reviews it, and merging is what provisions the cluster.
   tags:
     - infrastructure
     - terraform
