@@ -153,18 +153,24 @@ if [ "$up" = 0 ]; then
   exit 1
 fi
 
-# Generate the docs, then bounce the service so the search indexer's first pass
-# has something to collate. Skipping the restart leaves the TechDocs tab
-# returning 500 until the indexer's next scheduled run ten minutes later.
+# Generate the docs so the search collator has something to find. Deliberately
+# no restart afterwards: the Lunr index is in memory, so bouncing the service
+# throws away a working index and reopens the very hole this is closing. The
+# collator picks the new docs up on its next pass instead - see the schedule in
+# app-config.production.yaml.
 echo "### building techdocs"
 "$REPO_DIR/deploy/warm-techdocs.sh"
-sudo systemctl restart backstage
 
-for _ in $(seq 1 30); do
-  if [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 http://127.0.0.1:7007/)" = "200" ]; then
+# Worth waiting for rather than assuming: until that pass runs, every techdocs
+# query the TechDocs tab fires comes back 500.
+echo "### waiting for the techdocs index"
+for _ in $(seq 1 24); do
+  if [ "$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 \
+       'http://127.0.0.1:7007/api/search/query?term=&types%5B0%5D=techdocs')" != "500" ]; then
     echo "up: $PUBLIC_URL"; exit 0
   fi
-  sleep 5
+  sleep 10
 done
-echo "came up, then did not answer after the techdocs restart - check: journalctl -u backstage -n 50" >&2
+echo "portal is up, but techdocs search is still 500 - the TechDocs tab will error" >&2
+echo "check: journalctl -u backstage -n 100 | grep -i techdocs" >&2
 exit 1

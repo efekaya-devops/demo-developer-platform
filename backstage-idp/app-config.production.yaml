@@ -29,6 +29,18 @@ backend:
       # outside the checkout, so rebuilding the app doesn't wipe the catalog
       directory: /home/ubuntu/backstage-data
 
+search:
+  collators:
+    techdocs:
+      schedule:
+        # The Lunr index lives in memory, so a restart drops it and searching
+        # techdocs returns 500 until the collator next runs - at the ten-minute
+        # default that is a visible hole after every deploy. Three small doc
+        # sets take well under a second to collate, so run it far more often.
+        frequency: { minutes: 2 }
+        timeout: { minutes: 5 }
+        initialDelay: { seconds: 15 }
+
 techdocs:
   publisher:
     type: local
