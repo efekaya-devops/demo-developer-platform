@@ -1,0 +1,26 @@
+# app-of-apps for the hosted demo. Same apps/ directory as root.yaml, minus the
+# monitoring stack: kube-prometheus-stack scrapes continuously and is the
+# single heaviest thing in the platform, which a 2-vCPU box feels immediately.
+#
+# root.yaml is excluded too — it would otherwise install the full root app,
+# which would pull monitoring straight back in.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/efekaya-devops/idp-gitops
+    targetRevision: main
+    path: apps
+    directory:
+      exclude: '{root.yaml,monitoring.yaml,monitoring-rules.yaml}'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,13 @@
+# Single-node variant of kind-cluster.yaml, for running the demo on one small
+# cloud VM. Three nodes buys you nothing here — they're containers on the same
+# kernel — and each one costs ~500MB that the Crossplane providers need more.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: idp
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080   # ArgoCD UI (NodePort)
+        hostPort: 8081
+      - containerPort: 30030   # Grafana (NodePort) - unused in this profile
+        hostPort: 3001
