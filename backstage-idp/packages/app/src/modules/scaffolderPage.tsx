@@ -3,6 +3,7 @@ import { ScaffolderPage, rootRouteRef } from '@backstage/plugin-scaffolder';
 import { convertLegacyRouteRef } from '@backstage/core-compat-api';
 import { makeStyles, Paper, Typography } from '@material-ui/core';
 import ErrorOutlineIcon from '@material-ui/icons/ErrorOutline';
+import { configApiRef, useApi } from '@backstage/core-plugin-api';
 
 // hides manage/edit templates from the create page browse list (they're
 // meant to be opened via a pre-filled link, not picked from the list).
@@ -32,14 +33,15 @@ const useBannerStyles = makeStyles(theme => ({
   },
 }));
 
-// The hosted demo is read-only: the reverse proxy refuses anything that would
-// write, so pressing Create returns 403. That's deliberate - a golden-path run
-// creates a *public* repo in this GitHub org under a name the visitor chooses,
-// and the ApplicationSet then deploys the result onto the single small box this
-// demo runs on. Saying so up front turns a confusing failure into a documented
-// boundary; the walkthrough recordings show the path actually completing.
+// The hosted demo is read-only: so pressing Create returns 403. That's deliberate - the walkthrough recordings show the path actually completing.
+// Only renders where it's true: app.readOnlyDemo is set in
+// app-config.production.yaml, so a local `yarn start` - where the scaffolder
+// really does work - shows nothing. Announcing a 403 that isn't going to happen
+// would be worse than saying nothing at all.
 const ReadOnlyNotice = () => {
   const classes = useBannerStyles();
+  const readOnly = useApi(configApiRef).getOptionalBoolean('app.readOnlyDemo');
+  if (!readOnly) return null;
   return (
     <Paper className={classes.root} elevation={0}>
       <ErrorOutlineIcon className={classes.icon} />

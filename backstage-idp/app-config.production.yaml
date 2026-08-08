@@ -9,6 +9,9 @@
 
 app:
   baseUrl: ${PUBLIC_URL}
+  # Shows the red notice on the Create pages. Only set here, so a local
+  # `yarn start` - where the scaffolder actually works - stays quiet.
+  readOnlyDemo: true
 
 backend:
   baseUrl: ${PUBLIC_URL}
