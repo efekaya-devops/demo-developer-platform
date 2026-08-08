@@ -4,6 +4,13 @@ kind: ApplicationSet
 metadata:
   name: services
   namespace: argocd
+  annotations:
+    # last wave on purpose. this needs the github-token secret, and without it
+    # the scm generator errors - in wave 0 that aborted the whole app-of-apps
+    # sync, so crossplane, the XRDs and the team claims (waves 1-3) never got
+    # applied. a fork that skips the secret step should lose service discovery,
+    # not the entire provisioning layer.
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   generators:
     - scmProvider:
